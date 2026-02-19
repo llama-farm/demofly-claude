@@ -1,0 +1,69 @@
+{
+  "total_duration_ms": 30910,
+  "scenes": [
+    {
+      "id": "scene-1",
+      "title": "Create First Note",
+      "start_ms": 0,
+      "end_ms": 8050,
+      "markers": [
+        { "action": "navigate", "target": "home", "ms": 120 },
+        { "action": "click", "target": "note-title", "ms": 1540 },
+        { "action": "type-start", "target": "note-title", "ms": 1580 },
+        { "action": "type-end", "target": "note-title", "ms": 2160 },
+        { "action": "click", "target": "note-body", "ms": 2920 },
+        { "action": "type-start", "target": "note-body", "ms": 2960 },
+        { "action": "type-end", "target": "note-body", "ms": 4510 },
+        { "action": "click", "target": "add-note-btn", "ms": 5480 },
+        { "action": "pause", "target": "view-result", "ms": 6520 }
+      ]
+    },
+    {
+      "id": "scene-2",
+      "title": "Edit the Note",
+      "start_ms": 9080,
+      "end_ms": 16410,
+      "markers": [
+        { "action": "click", "target": "edit-btn", "ms": 9420 },
+        { "action": "click", "target": "edit-title", "ms": 10180 },
+        { "action": "type-start", "target": "edit-title", "ms": 10350 },
+        { "action": "type-end", "target": "edit-title", "ms": 11060 },
+        { "action": "click", "target": "edit-body", "ms": 11720 },
+        { "action": "type-start", "target": "edit-body", "ms": 11890 },
+        { "action": "type-end", "target": "edit-body", "ms": 13380 },
+        { "action": "click", "target": "save-btn", "ms": 14140 },
+        { "action": "pause", "target": "view-saved", "ms": 15180 }
+      ]
+    },
+    {
+      "id": "scene-3",
+      "title": "Create Second Note & Search",
+      "start_ms": 17440,
+      "end_ms": 24350,
+      "markers": [
+        { "action": "click", "target": "note-title-2", "ms": 17820 },
+        { "action": "type-start", "target": "note-title-2", "ms": 17860 },
+        { "action": "type-end", "target": "note-title-2", "ms": 18420 },
+        { "action": "click", "target": "note-body-2", "ms": 18980 },
+        { "action": "type-start", "target": "note-body-2", "ms": 19020 },
+        { "action": "type-end", "target": "note-body-2", "ms": 20070 },
+        { "action": "click", "target": "add-note-btn-2", "ms": 20730 },
+        { "action": "click", "target": "search", "ms": 21890 },
+        { "action": "type-start", "target": "search", "ms": 21930 },
+        { "action": "type-end", "target": "search", "ms": 22280 },
+        { "action": "pause", "target": "view-search-results", "ms": 22320 }
+      ]
+    },
+    {
+      "id": "scene-4",
+      "title": "Delete & Wrap Up",
+      "start_ms": 25380,
+      "end_ms": 30910,
+      "markers": [
+        { "action": "click", "target": "first-note", "ms": 26210 },
+        { "action": "click", "target": "delete-btn", "ms": 27340 },
+        { "action": "pause", "target": "final", "ms": 28380 }
+      ]
+    }
+  ]
+}

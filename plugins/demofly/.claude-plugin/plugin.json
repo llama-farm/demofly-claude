@@ -1,0 +1,12 @@
+{
+  "name": "demofly",
+  "description": "Automated demo video generation for web applications. Explores your codebase, designs a narrative, generates Playwright scripts with human-like interactions, records video with granular timing markers, and produces narration-ready transcripts.",
+  "version": "0.1.0",
+  "author": {
+    "name": "llama-farm",
+    "url": "https://github.com/llama-farm"
+  },
+  "repository": "https://github.com/llama-farm/demofly-claude",
+  "license": "MIT",
+  "keywords": ["demo", "video", "playwright", "web", "automation", "recording", "narration"]
+}
