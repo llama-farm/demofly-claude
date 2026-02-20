@@ -124,6 +124,56 @@ If narration audio exists and needs to be stitched onto video:
 ffmpeg -i video.mp4 -i narration.wav -c:v copy -c:a aac -map 0:v:0 -map 1:a:0 output-final.mp4
 ```
 
+### Phase 6.5: Reconcile timing.json (Before TTS)
+
+**This step is mandatory before TTS generation.** Read the `timing.json` file and validate/fix the schema before proceeding.
+
+Run this reconciliation script to detect and remap any field name mismatches:
+
+```bash
+node -e "
+const fs = require('fs');
+const path = 'demofly/<name>/recordings/timing.json';
+const raw = JSON.parse(fs.readFileSync(path, 'utf8'));
+let fixed = false;
+
+// Reconcile top-level field
+const totalDuration = raw.totalDuration ?? raw.total_duration_ms ?? raw.totalDurationMs ?? 0;
+if (!raw.totalDuration && (raw.total_duration_ms || raw.totalDurationMs)) fixed = true;
+
+// Reconcile scene fields
+const scenes = (raw.scenes || []).map(s => {
+  const sceneId = s.sceneId ?? s.id ?? s.scene_id ?? 'unknown';
+  const startMs = s.startMs ?? s.start_ms ?? 0;
+  const endMs = s.endMs ?? s.end_ms ?? 0;
+  const markers = (s.markers || []).map(m => ({
+    action: m.action,
+    target: m.target ?? '',
+    ms: m.ms ?? m.timestamp ?? 0,
+  }));
+  if (!s.sceneId || !('startMs' in s) || !('endMs' in s)) fixed = true;
+  return { sceneId, startMs, endMs, markers };
+});
+
+const result = { totalDuration, scenes };
+if (fixed) {
+  fs.writeFileSync(path, JSON.stringify(result, null, 2));
+  console.log('RECONCILED: Fixed field names in timing.json (' + scenes.length + ' scenes)');
+} else {
+  console.log('OK: timing.json schema is correct (' + scenes.length + ' scenes)');
+}
+"
+```
+
+Replace `<name>` with the demo name. This catches common mismatches:
+- `total_duration_ms` → `totalDuration`
+- `id` or `scene_id` → `sceneId`
+- `start_ms` → `startMs`
+- `end_ms` → `endMs`
+
+If the script reports "RECONCILED", the file has been fixed in-place and is now safe
+for the CLI's `generate` and `tts` commands.
+
 ### Phase 7: Narration (Optional)
 
 If the user wants narration, generate `demofly/<name>/transcript.md` with:
@@ -157,16 +207,20 @@ DEMOFLY|scene-2|start||8600
 
 The marker format is: `DEMOFLY|<scene-id>|<action>|<target>|<elapsed-ms>`
 
-After the test run, parse these from console output to produce `timing.json`:
+After the test run, parse these from console output to produce `timing.json`.
+
+**⚠️ Critical: Use camelCase field names.** The CLI's `TimingData` interface expects
+`totalDuration`, `sceneId`, `startMs`, `endMs`. Using snake_case (`total_duration_ms`,
+`id`, `start_ms`, `end_ms`) will silently break audio matching and duration formatting.
+
 ```json
 {
-  "total_duration_ms": 45000,
+  "totalDuration": 45000,
   "scenes": [
     {
-      "id": "scene-1",
-      "title": "Sign Up Flow",
-      "start_ms": 0,
-      "end_ms": 8500,
+      "sceneId": "scene-1",
+      "startMs": 0,
+      "endMs": 8500,
       "markers": [
         { "action": "click", "target": "signup-btn", "ms": 1200 },
         { "action": "type-start", "target": "email-field", "ms": 3400 },

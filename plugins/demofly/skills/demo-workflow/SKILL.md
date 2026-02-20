@@ -207,17 +207,19 @@ Grep for lines containing the `DEMOFLY|` prefix and strip everything before it.
 
 **Step 3: Parse into structured JSON.**
 
-The resulting timing.json has this structure:
+The resulting timing.json **must** use camelCase field names to match the CLI's
+`TimingData` TypeScript interface. This is critical — the CLI uses these exact
+field names for audio file matching and duration formatting. Snake_case fields
+will silently break the pipeline.
 
 ```json
 {
-  "total_duration_ms": 187400,
+  "totalDuration": 187400,
   "scenes": [
     {
-      "id": "scene-1",
-      "title": "Dashboard Overview",
-      "start_ms": 0,
-      "end_ms": 18400,
+      "sceneId": "scene-1",
+      "startMs": 0,
+      "endMs": 18400,
       "markers": [
         { "action": "click", "target": "new-project-btn", "ms": 1200 },
         { "action": "type-start", "target": "project-name", "ms": 3400 },
@@ -227,10 +229,9 @@ The resulting timing.json has this structure:
       ]
     },
     {
-      "id": "scene-2",
-      "title": "Project Configuration",
-      "start_ms": 18400,
-      "end_ms": 42100,
+      "sceneId": "scene-2",
+      "startMs": 18400,
+      "endMs": 42100,
       "markers": []
     }
   ]
@@ -238,12 +239,16 @@ The resulting timing.json has this structure:
 ```
 
 Field definitions:
-- `total_duration_ms` — elapsed time from the first `start` marker to the last `end` marker.
-- `scenes[].id` — matches the scene ID used in markers (scene-1, scene-2, etc.).
-- `scenes[].title` — pulled from script.md scene headings.
-- `scenes[].start_ms` — timestamp of the scene's `start` marker.
-- `scenes[].end_ms` — timestamp of the scene's `end` marker.
+- `totalDuration` — elapsed time in ms from the first `start` marker to the last `end` marker.
+- `scenes[].sceneId` — matches the scene ID used in markers (scene-1, scene-2, etc.).
+- `scenes[].startMs` — timestamp of the scene's `start` marker.
+- `scenes[].endMs` — timestamp of the scene's `end` marker.
 - `scenes[].markers` — all markers between `start` and `end`, excluding `start` and `end` themselves.
+
+> **⚠️ Common mistake:** Do NOT use snake_case (`total_duration_ms`, `id`,
+> `start_ms`, `end_ms`). The CLI's `TimingData` interface expects camelCase.
+> Using the wrong field names causes `findAudioFiles()` to match nothing and
+> `formatDuration()` to return NaN.
 
 **Extraction script** (Node.js one-liner the agent can run):
 
@@ -260,21 +265,23 @@ const scenes = [];
 let current = null;
 for (const l of lines) {
   if (l.action === 'start') {
-    current = { id: l.scene, title: '', start_ms: l.ms, end_ms: 0, markers: [] };
+    // Use camelCase field names to match CLI's TimingData interface
+    current = { sceneId: l.scene, startMs: l.ms, endMs: 0, markers: [] };
     scenes.push(current);
   } else if (l.action === 'end' && current) {
-    current.end_ms = l.ms;
+    current.endMs = l.ms;
     current = null;
   } else if (current) {
     current.markers.push({ action: l.action, target: l.target, ms: l.ms });
   }
 }
 const result = {
-  total_duration_ms: scenes.length ? scenes[scenes.length - 1].end_ms - scenes[0].start_ms : 0,
+  // camelCase — must match CLI's TimingData interface exactly
+  totalDuration: scenes.length ? scenes[scenes.length - 1].endMs - scenes[0].startMs : 0,
   scenes
 };
 fs.writeFileSync('recordings/timing.json', JSON.stringify(result, null, 2));
-console.log('Wrote timing.json:', scenes.length, 'scenes,', result.total_duration_ms + 'ms total');
+console.log('Wrote timing.json:', scenes.length, 'scenes,', result.totalDuration + 'ms total');
 "
 ```
 
