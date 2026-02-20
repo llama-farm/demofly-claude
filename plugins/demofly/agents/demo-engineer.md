@@ -112,19 +112,7 @@ After recording:
 - Verify the video file exists in the recordings directory.
 - If the test failed, enter the debugging loop (delegate to sub-agent, fix, re-run).
 
-### Phase 6: Post-Process
-
-If the recording produced a `.webm` file and `.mp4` is preferred:
-```bash
-ffmpeg -i input.webm -c:v libx264 -preset medium -crf 23 -c:a aac output.mp4
-```
-
-If narration audio exists and needs to be stitched onto video:
-```bash
-ffmpeg -i video.mp4 -i narration.wav -c:v copy -c:a aac -map 0:v:0 -map 1:a:0 output-final.mp4
-```
-
-### Phase 7: Narration (Optional)
+### Phase 6: Narration (Optional)
 
 If the user wants narration, generate `demofly/<name>/transcript.md` with:
 - Per-beat narration text, organized by beat number matching script.md (e.g., Beat 1.1, Beat 1.2, Beat 2.1).
@@ -132,6 +120,19 @@ If the user wants narration, generate `demofly/<name>/transcript.md` with:
 - TTS-compatible tags in bracket format: `[warmly]`, `[confidently]`, `[excited]`, `[pause: 0.5s]`, etc. See the `demo-workflow` skill Section 7 for the full tag reference.
 - Estimated read time vs. available window per beat. Narration should fill 40-70% of each beat's window.
 - Silent beats from script.md are omitted (they produce no audio clip).
+
+### Phase 7: Final Assembly
+
+Delegate TTS and video assembly to the `demofly` CLI:
+
+1. If transcript.md was generated, run `demofly tts <name>` to synthesize audio.
+2. Run `demofly generate <name>` to assemble the final video from existing artifacts.
+
+The CLI handles all mechanical operations (Kokoro TTS, ffmpeg stitching, format conversion).
+The agent does not run ffmpeg or TTS directly — it delegates to the CLI commands.
+
+If the `demofly` CLI is not available or fails, report the error and note that the raw recording
+and timing data are still available for manual assembly.
 
 ## Technical Knowledge
 
