@@ -11,9 +11,11 @@ The user invoked `/demofly:create $ARGUMENTS`.
 
 ## Step 0: Check Playwright MCP Availability
 
-Before anything else, verify that Playwright MCP tools are available. Attempt to call `mcp__plugin_playwright_playwright__browser_snapshot` or check your available tools list for any tool starting with `mcp__plugin_playwright_playwright__`.
+Before anything else, verify that Playwright MCP tools are working by **actually calling** `mcp__plugin_playwright_playwright__browser_snapshot`.
 
-**If Playwright MCP tools are NOT available**, tell the user:
+- **If the call succeeds** (returns a snapshot or accessibility tree) → the plugin is working. Continue.
+- **If the call fails with a "no page" or "no browser" type error** → the plugin is working, there is just no page open yet. This is fine. Continue.
+- **If the call fails with a "tool not found" or "unknown tool" error** → the plugin is NOT installed. Tell the user:
 
 > Demofly requires the Playwright MCP plugin. Install it with:
 >
@@ -26,8 +28,12 @@ Before anything else, verify that Playwright MCP tools are available. Attempt to
 > ```
 > /plugin install playwright@anthropics-claude-code
 > ```
+>
+> After installing, **restart Claude Code** (exit and reopen), then re-run `/demofly:create`.
 
 Then **STOP**. Do not continue the pipeline.
+
+**IMPORTANT**: Do NOT just check if the tools appear in your tools list. The only reliable check is to actually call the tool and inspect the error. A "no page open" error means the plugin IS working.
 
 ---
 
