@@ -1,8 +1,4 @@
-## Purpose
-
-Defines the Claude Code slash commands for creating and managing demos.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Create command starts or continues a demo
 
@@ -55,17 +51,3 @@ The plugin SHALL provide a `/demofly:create` command that accepts an optional de
 
 - **WHEN** the agent runs `demofly generate <name>` and it exits with a non-zero exit code
 - **THEN** the agent reports the error to the user and suggests manual troubleshooting
-
-### Requirement: List command shows all demos
-
-The plugin SHALL provide a `/demofly:list` command that scans the `demofly/` directory and displays each demo subdirectory with its current phase (inferred from file existence).
-
-#### Scenario: Multiple demos exist
-
-- **WHEN** the user runs `/demofly:list` and `demofly/` contains `product-tour/` (with all files) and `feature-demo/` (with only `proposal.md`)
-- **THEN** the output shows `product-tour` as recorded/complete and `feature-demo` as proposed
-
-#### Scenario: No demos exist
-
-- **WHEN** the user runs `/demofly:list` and `demofly/` does not exist or is empty
-- **THEN** the output indicates no demos have been created and suggests `/demofly:create`

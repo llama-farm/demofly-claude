@@ -192,6 +192,19 @@ If the user wants narration, generate `demofly/<name>/transcript.md` with:
 - Estimated read time vs. available window per beat. Narration should fill 40-70% of each beat's window.
 - Silent beats from script.md are omitted (they produce no audio clip).
 
+### Phase 7: Final Assembly
+
+Delegate TTS and video assembly to the `demofly` CLI:
+
+1. If transcript.md was generated, run `demofly tts <name>` to synthesize audio.
+2. Run `demofly generate <name>` to assemble the final video from existing artifacts.
+
+The CLI handles all mechanical operations (Kokoro TTS, ffmpeg stitching, format conversion).
+The agent does not run ffmpeg or TTS directly — it delegates to the CLI commands.
+
+If the `demofly` CLI is not available or fails, report the error and note that the raw recording
+and timing data are still available for manual assembly.
+
 ## Technical Knowledge
 
 ### Playwright MCP vs Playwright CLI

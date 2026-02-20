@@ -27,7 +27,19 @@ context.md --> proposal.md --> script.md --> demo.spec.ts + playwright.config.ts
                                           (run recording)
                                                 |
                                                 v
-                                          timing.json --> transcript.md --> final.mp4
+                                          timing.json --> transcript.md
+                                                |              |
+                                                |              v
+                                                |        demofly tts <name>
+                                                |              |
+                                                |              v
+                                                |         audio/*.wav
+                                                |              |
+                                                v              v
+                                          demofly generate <name>
+                                                |
+                                                v
+                                          recordings/final.mp4
 ```
 
 ### Artifact Reference
@@ -816,7 +828,7 @@ A markdown table with `Words` and `Action` columns:
 
 ---
 
-## 7. Transcript and Stitching
+## 7. Transcript, TTS, and Final Assembly
 
 The cardinal rule: **record first, narrate second.** Video timing is variable and
 unpredictable. Network latency, animation durations, and page load times all
@@ -828,8 +840,13 @@ the other way around.
 1. Run the Playwright recording and capture console output.
 2. Extract timing.json from DEMOFLY markers (Section 2).
 3. Generate transcript.md using actual scene durations from timing.json.
-4. Generate per-scene audio files (via TTS API or manual recording).
-5. Stitch audio onto video using ffmpeg with timing-based delays.
+4. Run `demofly tts <name>` to generate per-scene audio files.
+5. Run `demofly generate <name>` to assemble the final video.
+
+TTS and final assembly are **deterministic CLI operations** — the agent delegates
+them to the `demofly` CLI rather than running ffmpeg or TTS inline. This keeps
+the agent focused on creative work (transcript writing, timing adjustments) while
+the CLI handles mechanical transformations.
 
 ### transcript.md Format
 
@@ -890,7 +907,7 @@ no audio is generated for the silent part.
 
 ### TTS Tag Format
 
-Tags are compatible with ElevenLabs v3 and similar TTS services.
+Tags are compatible with the Kokoro TTS engine used by `demofly tts`.
 
 **Emotion tags** — place before the sentence they affect:
 - `[warmly]` — friendly, welcoming tone. Use for introductions.
@@ -924,115 +941,61 @@ After generating transcript.md, check each beat:
 - **Rule of thumb**: Narration should fill 40-70% of the beat's available window.
   The rest is natural silence while the viewer watches the interactions.
 
-### Stitching with ffmpeg
+### TTS Generation via CLI
 
-**The key concept:** Each beat in script.md has a marker. After recording,
-timing.json records the exact timestamp of that marker. Each beat's TTS audio
-clip is positioned at its marker timestamp using ffmpeg's `adelay` filter.
+After generating transcript.md, delegate TTS audio synthesis to the `demofly tts`
+CLI command:
 
-**Input files:**
-- `recordings/video.mp4` (or `.webm`) — the Playwright recording
-- `narration/beat-1.1.mp3` — audio for beat 1.1
-- `narration/beat-1.2.mp3` — audio for beat 1.2
-- ... one file per beat that has narration (silent beats have no audio file)
-
-**The ffmpeg command:**
 ```bash
-ffmpeg -i recordings/video.mp4 \
-  -i narration/beat-1.1.mp3 \
-  -i narration/beat-1.2.mp3 \
-  -i narration/beat-1.3.mp3 \
-  -i narration/beat-2.1.mp3 \
-  -i narration/beat-2.2.mp3 \
-  -i narration/beat-2.3.mp3 \
-  -filter_complex "
-    [1:a]adelay=0|0[a1];
-    [2:a]adelay=5200|5200[a2];
-    [3:a]adelay=9800|9800[a3];
-    [4:a]adelay=12400|12400[a4];
-    [5:a]adelay=16200|16200[a5];
-    [6:a]adelay=24300|24300[a6];
-    [a1][a2][a3][a4][a5][a6]amix=inputs=6:duration=longest[aout]
-  " \
-  -map 0:v -map "[aout]" \
-  -c:v copy -c:a aac \
-  recordings/final.mp4
+demofly tts <name>
 ```
 
-**How it works:**
-- Each `-i` adds an audio input: one per narrated beat.
-- `adelay=X|X` delays the audio by X milliseconds. The value comes from each
-  beat's marker timestamp in timing.json.
-- `amix=inputs=N:duration=longest` mixes all audio streams.
-- `-c:v copy` copies video without re-encoding.
+This reads `demofly/<name>/transcript.md`, parses per-scene narration text
+(stripping TTS tags), synthesizes audio using Kokoro TTS, and writes WAV files
+to `demofly/<name>/audio/scene-1.wav`, `scene-2.wav`, etc.
 
-**Constructing this dynamically:**
+Options:
+- `--voice <name>` — TTS voice (default: `af_heart`). Available: `af_heart`,
+  `af_bella`, `af_nicole`, `af_nova`, `af_sarah`, `am_adam`, `am_michael`.
+- `--speed <multiplier>` — Speech rate (default: `1.0`).
 
-```typescript
-const timing = JSON.parse(fs.readFileSync('recordings/timing.json', 'utf8'));
-
-// Collect all beat markers with their timestamps
-const beats: { id: string; ms: number }[] = [];
-for (const scene of timing.scenes) {
-  // Each marker in timing.json corresponds to a beat's marker
-  // Match against the beat IDs from script.md
-  for (const marker of scene.markers) {
-    beats.push({ id: `${scene.id.replace('scene-', '')}.${beats.filter(b => b.id.startsWith(scene.id.replace('scene-', '') + '.')).length + 1}`, ms: marker.ms });
-  }
-}
-
-// Filter to only beats that have narration audio files
-const narratedBeats = beats.filter(b =>
-  fs.existsSync(`narration/beat-${b.id}.mp3`)
-);
-
-const inputs = narratedBeats.map(b => `-i narration/beat-${b.id}.mp3`).join(' \\\n  ');
-const delays = narratedBeats.map((b, i) =>
-  `[${i + 1}:a]adelay=${b.ms}|${b.ms}[a${i + 1}]`
-).join(';\n    ');
-const mixInputs = narratedBeats.map((_, i) => `[a${i + 1}]`).join('');
-const n = narratedBeats.length;
-
-const cmd = `ffmpeg -i recordings/video.mp4 \\
-  ${inputs} \\
-  -filter_complex "
-    ${delays};
-    ${mixInputs}amix=inputs=${n}:duration=longest[aout]
-  " \\
-  -map 0:v -map "[aout]" \\
-  -c:v copy -c:a aac \\
-  recordings/final.mp4`;
+The CLI requires Node 22+. If the default node version is older, use nvm:
+```bash
+source ~/.nvm/nvm.sh && nvm use 22 > /dev/null 2>&1 && demofly tts <name>
 ```
 
-**Key advantage over per-scene stitching:** If an API call takes longer than
-expected during recording, subsequent beat markers shift naturally. Each beat's
-audio is still positioned at its actual marker timestamp — no misalignment.
+### Final Assembly via CLI
 
-### Intra-Scene Alignment
+After TTS (or directly after recording if no narration), delegate final video
+assembly to the `demofly generate` CLI command:
 
-With per-beat stitching, intra-scene alignment is the default behavior. Each beat
-within a scene has its own marker timestamp and its own audio clip, so narration
-is automatically positioned at the correct moment — no manual splitting or silence
-padding required.
+```bash
+demofly generate <name>
+```
 
-This eliminates the need for the scene-level workarounds (splitting scene audio
-or prepending silence) that were necessary with per-scene stitching.
+This reads existing artifacts from disk:
+- `demofly/<name>/recordings/video.webm` — the Playwright recording
+- `demofly/<name>/recordings/timing.json` — timing marker data
+- `demofly/<name>/audio/*.wav` — TTS audio files (optional)
+
+And produces `demofly/<name>/recordings/final.mp4`:
+- If audio files exist: stitches audio onto video using ffmpeg with
+  timing-based delays (adelay filter, per-scene alignment).
+- If no audio: converts webm to mp4 (or copies as-is if ffmpeg unavailable).
+
+The agent does NOT run ffmpeg directly — `demofly generate` handles all
+assembly logic internally.
 
 ### Final Quality Checks
 
-After stitching, verify:
-1. **Audio starts and stops at reasonable times.** Play the first and last 10
-   seconds of the final video.
-2. **No audio overlap between beats.** Each beat's audio should finish before
-   the next beat's audio begins. If overlap occurs, trim the earlier beat's
-   audio.
-3. **Volume is consistent.** If one scene's audio is significantly louder or
-   quieter, normalize before stitching:
-   ```bash
-   ffmpeg -i scene-1.mp3 -af "loudnorm=I=-16:TP=-1.5:LRA=11" scene-1-norm.mp3
-   ```
-4. **Video and audio total durations match.** The final video should not have a
-   long silent tail or cut off audio early.
+After assembly, remind the user to verify:
+1. **Watch the final video** to check visual quality and audio sync.
+2. **Audio timing** — narration should align with on-screen actions.
+3. **Volume consistency** across scenes.
+4. **No audio overlap** between beats.
+
+The agent cannot see video content — it can only confirm the CLI reported
+success and check file sizes.
 
 ---
 

@@ -16,6 +16,7 @@ Add the Demofly marketplace and install the plugin:
 - [Playwright MCP plugin](https://github.com/anthropics/claude-code) for browser automation
 - Node.js 20+
 - `@playwright/test` (installed automatically when recording)
+- **Note**: First-time TTS setup downloads ~300MB Kokoro model (may display as "~80MB" due to CLI messaging bug)
 
 ## Usage
 

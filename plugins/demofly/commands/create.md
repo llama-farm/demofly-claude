@@ -11,9 +11,11 @@ The user invoked `/demofly:create $ARGUMENTS`.
 
 ## Step 0: Check Playwright MCP Availability
 
-Before anything else, verify that Playwright MCP tools are available. Attempt to call `mcp__plugin_playwright_playwright__browser_snapshot` or check your available tools list for any tool starting with `mcp__plugin_playwright_playwright__`.
+Before anything else, verify that Playwright MCP tools are working by **actually calling** `mcp__plugin_playwright_playwright__browser_snapshot`.
 
-**If Playwright MCP tools are NOT available**, tell the user:
+- **If the call succeeds** (returns a snapshot or accessibility tree) → the plugin is working. Continue.
+- **If the call fails with a "no page" or "no browser" type error** → the plugin is working, there is just no page open yet. This is fine. Continue.
+- **If the call fails with a "tool not found" or "unknown tool" error** → the plugin is NOT installed. Tell the user:
 
 > Demofly requires the Playwright MCP plugin. Install it with:
 >
@@ -26,8 +28,12 @@ Before anything else, verify that Playwright MCP tools are available. Attempt to
 > ```
 > /plugin install playwright@anthropics-claude-code
 > ```
+>
+> After installing, **restart Claude Code** (exit and reopen), then re-run `/demofly:create`.
 
 Then **STOP**. Do not continue the pipeline.
+
+**IMPORTANT**: Do NOT just check if the tools appear in your tools list. The only reliable check is to actually call the tool and inspect the error. A "no page open" error means the plugin IS working.
 
 ---
 
@@ -65,7 +71,8 @@ Use `Glob` to check for these files. Then apply this logic:
 | `demofly/<name>/proposal.md` exists but no `script.md` | Script (Step 5) |
 | `demofly/<name>/script.md` exists but no `demo.spec.ts` | Playwright Generation (Step 6) |
 | `demofly/<name>/demo.spec.ts` exists but no `recordings/` with video | Recording (Step 7) |
-| `demofly/<name>/recordings/` contains a video file | Demo is complete -- ask the user if they want to re-record, add narration, or start fresh |
+| `demofly/<name>/recordings/` contains video but no `recordings/final.mp4` or `recordings/final.webm` | Final Assembly (Step 9) |
+| `demofly/<name>/recordings/final.mp4` or `recordings/final.webm` exists | Demo is complete -- ask the user if they want to re-record, add narration, or start fresh |
 
 Tell the user what phase you are starting from and why.
 
@@ -398,7 +405,7 @@ If ffmpeg is not installed, skip this step and note the video is in `.webm` form
 
 After recording succeeds, ask the user: **"Would you like me to generate a narration transcript for this demo?"**
 
-If **no**, the pipeline is complete. Summarize what was created and stop.
+If **no**, proceed directly to Step 9 (Final Assembly) without TTS.
 
 If **yes**, read `demofly/<name>/script.md` and `demofly/<name>/recordings/timing.json`. Generate `demofly/<name>/transcript.md`:
 
@@ -424,6 +431,94 @@ Total video duration: X.Xs
 ```
 
 Use **actual beat timestamps from timing.json**, not the estimated targets from the proposal. Each beat's narration must fit within its available window (the time until the next beat's marker).
+
+After generating the transcript, proceed to Step 9.
+
+---
+
+## Step 9: Final Assembly
+
+**Goal**: Use the `demofly` CLI to generate TTS audio (if narration was requested) and assemble the final video.
+
+### Check demofly CLI availability
+
+First, verify the `demofly` CLI is available and meets the Node.js version requirement:
+
+```bash
+demofly --version 2>&1
+```
+
+**If the command fails with a Node.js version error** (requires Node 22+), retry with nvm:
+
+```bash
+source ~/.nvm/nvm.sh && nvm use 22 > /dev/null 2>&1 && demofly --version 2>&1
+```
+
+If this also fails, or if `demofly` is not found at all, tell the user:
+
+> The `demofly` CLI is required for final assembly but was not found (or requires Node 22+).
+>
+> Install it with:
+> ```
+> npm install -g demofly
+> ```
+>
+> Your recording and artifacts are complete — you can run assembly manually later:
+> ```
+> demofly tts <name>        # if narration was generated
+> demofly generate <name>   # assemble final video
+> ```
+
+Then **STOP** the assembly step. The demo is still usable — the raw video and timing data are in `demofly/<name>/recordings/`.
+
+### Run TTS (if transcript was generated)
+
+If `demofly/<name>/transcript.md` was generated in Step 8:
+
+```bash
+demofly tts <name>
+```
+
+(Or with nvm if needed: `source ~/.nvm/nvm.sh && nvm use 22 > /dev/null 2>&1 && demofly tts <name>`)
+
+This generates `demofly/<name>/audio/scene-1.wav`, `scene-2.wav`, etc.
+
+**If TTS fails**, report the error to the user but **continue to the assembly step**. A silent video is still useful:
+
+> TTS generation failed: <error>. Continuing with silent video assembly.
+
+### Run final assembly
+
+```bash
+demofly generate <name>
+```
+
+(Or with nvm if needed: `source ~/.nvm/nvm.sh && nvm use 22 > /dev/null 2>&1 && demofly generate <name>`)
+
+This reads existing artifacts from disk:
+- `recordings/video.webm` + `recordings/timing.json` (from Step 7)
+- `audio/*.wav` (from TTS step above, if available)
+
+And produces `recordings/final.mp4` (stitched with audio if available, or converted from webm if not).
+
+**If assembly fails**, report the error and suggest manual troubleshooting:
+
+> Assembly failed: <error>. Your raw recording is still available at `demofly/<name>/recordings/video.webm`.
+>
+> You can retry manually: `demofly generate <name>`
+
+### Report success
+
+> Demo complete!
+>
+> - Final video: `demofly/<name>/recordings/final.mp4`
+> - Raw recording: `demofly/<name>/recordings/video.webm`
+> - Timing data: `demofly/<name>/recordings/timing.json`
+> - Audio files: `demofly/<name>/audio/` (if narration was generated)
+> - Total duration: X seconds
+> - Scenes: N
+>
+> **Important**: Please watch the final video to verify visual quality and audio sync. I cannot see the video content — I can only confirm the pipeline completed successfully.
 
 ---
 
