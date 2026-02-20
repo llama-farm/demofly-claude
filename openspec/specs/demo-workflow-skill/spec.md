@@ -105,3 +105,20 @@ The skill SHALL instruct the agent to run the generated Playwright script, check
 - **WHEN** the agent runs the Playwright script and it fails
 - **THEN** the agent delegates debugging to a sub-agent, applies the recommended fixes, and re-runs the test
 
+### Requirement: Skill warns against common timing.json field name mistakes
+
+The skill SHALL include an explicit anti-patterns section showing examples of
+incorrect field naming (snake_case, alternative names) alongside the correct
+camelCase format. This section reinforces the correct schema through negative
+examples.
+
+#### Scenario: Agent sees anti-pattern examples in skill
+
+- **WHEN** an agent reads the skill's timing.json extraction section
+- **THEN** it finds explicit wrong-vs-right examples showing snake_case, alternative names, and other common mistakes alongside the correct camelCase fields
+
+#### Scenario: Anti-patterns cover non-obvious variations
+
+- **WHEN** an agent reads the anti-patterns section
+- **THEN** it finds examples beyond simple snake_case, including renamed fields (e.g. `duration` instead of `totalDuration`, `begin`/`finish` instead of `startMs`/`endMs`)
+

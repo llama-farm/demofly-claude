@@ -44,3 +44,21 @@ The agent SHALL delegate all high-volume exploration and debugging work to sub-a
 
 - **WHEN** a complete demo has been generated from scratch
 - **THEN** the parent context contains sub-agent result summaries rather than raw file reads, Playwright snapshots, or verbose error logs
+
+### Requirement: Agent reconciles timing.json via LLM before TTS
+
+After extracting timing.json and before TTS/transcript generation, the agent SHALL
+perform an LLM-based reconciliation step. The agent reads the generated timing.json,
+prompts Claude with the exact TimingData interface and the generated content, and
+asks it to normalize the JSON to match the interface. The corrected output is written
+back. This handles arbitrary field naming variations, not just known snake_case patterns.
+
+#### Scenario: timing.json has correct field names
+
+- **WHEN** the agent generates timing.json with correct camelCase fields
+- **THEN** the LLM reconciliation step confirms the schema is correct and writes back an identical file
+
+#### Scenario: timing.json has unexpected field names
+
+- **WHEN** the agent generates timing.json with non-standard field names (e.g. `duration`, `begin`, `finish`, or any other variation)
+- **THEN** the LLM reconciliation step normalizes all fields to match the TimingData interface and writes the corrected JSON back

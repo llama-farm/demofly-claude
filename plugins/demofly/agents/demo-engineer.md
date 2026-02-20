@@ -112,7 +112,78 @@ After recording:
 - Verify the video file exists in the recordings directory.
 - If the test failed, enter the debugging loop (delegate to sub-agent, fix, re-run).
 
-### Phase 6: Narration (Optional)
+### Phase 6: Post-Process
+
+If the recording produced a `.webm` file and `.mp4` is preferred:
+```bash
+ffmpeg -i input.webm -c:v libx264 -preset medium -crf 23 -c:a aac output.mp4
+```
+
+If narration audio exists and needs to be stitched onto video:
+```bash
+ffmpeg -i video.mp4 -i narration.wav -c:v copy -c:a aac -map 0:v:0 -map 1:a:0 output-final.mp4
+```
+
+### Phase 6.5: Reconcile timing.json via LLM (Before TTS)
+
+**This step is mandatory before TTS generation.** LLM-generated timing.json may have unpredictable field names — snake_case, alternative names, or other variations. A deterministic remap script only handles known cases. Instead, use an LLM to understand intent and normalize the JSON regardless of naming convention.
+
+**Steps:**
+
+1. Read the generated `demofly/<name>/recordings/timing.json`.
+2. Prompt Claude with the exact `TimingData` interface and the generated content, using the template below.
+3. Write the corrected JSON back to `timing.json`.
+4. Validate that the result parses as valid JSON.
+
+**Prompt template** — send this as a message to Claude (or use as a self-prompt):
+
+```
+Here is a timing.json file generated from a Playwright recording:
+
+<generated_json>
+{content of timing.json}
+</generated_json>
+
+It MUST conform to this exact TypeScript interface:
+
+interface TimingMarker {
+  action: string;
+  target: string;
+  ms: number;
+}
+
+interface TimingScene {
+  sceneId: string;
+  startMs: number;
+  endMs: number;
+  markers: TimingMarker[];
+}
+
+interface TimingData {
+  totalDuration: number;
+  scenes: TimingScene[];
+}
+
+Rules:
+- Field names must be exact camelCase as shown in the interface
+- All numeric values must be numbers (not strings)
+- scenes must be an array, each with sceneId, startMs, endMs, markers
+- markers must be an array of {action, target, ms}
+- Preserve all data — only rename/restructure fields to match the interface
+- If a field is clearly the same data under a different name, map it
+
+Return ONLY the corrected JSON, no explanation.
+```
+
+5. Parse the returned JSON to confirm it is valid. If it parses, write it to `demofly/<name>/recordings/timing.json`. If it does not parse, retry the prompt once.
+
+**Why LLM instead of a deterministic script:**
+- LLM output is inherently non-deterministic — the field names could be anything
+- A script only handles cases you've already seen (snake_case, known aliases)
+- An LLM can understand intent and normalize regardless of naming convention
+- This is a two-pass approach: first LLM generates, second LLM validates/fixes
+
+### Phase 7: Narration (Optional)
 
 If the user wants narration, generate `demofly/<name>/transcript.md` with:
 - Per-beat narration text, organized by beat number matching script.md (e.g., Beat 1.1, Beat 1.2, Beat 2.1).
@@ -158,16 +229,20 @@ DEMOFLY|scene-2|start||8600
 
 The marker format is: `DEMOFLY|<scene-id>|<action>|<target>|<elapsed-ms>`
 
-After the test run, parse these from console output to produce `timing.json`:
+After the test run, parse these from console output to produce `timing.json`.
+
+**⚠️ Critical: Use camelCase field names.** The CLI's `TimingData` interface expects
+`totalDuration`, `sceneId`, `startMs`, `endMs`. Using snake_case (`total_duration_ms`,
+`id`, `start_ms`, `end_ms`) will silently break audio matching and duration formatting.
+
 ```json
 {
-  "total_duration_ms": 45000,
+  "totalDuration": 45000,
   "scenes": [
     {
-      "id": "scene-1",
-      "title": "Sign Up Flow",
-      "start_ms": 0,
-      "end_ms": 8500,
+      "sceneId": "scene-1",
+      "startMs": 0,
+      "endMs": 8500,
       "markers": [
         { "action": "click", "target": "signup-btn", "ms": 1200 },
         { "action": "type-start", "target": "email-field", "ms": 3400 },
