@@ -124,55 +124,64 @@ If narration audio exists and needs to be stitched onto video:
 ffmpeg -i video.mp4 -i narration.wav -c:v copy -c:a aac -map 0:v:0 -map 1:a:0 output-final.mp4
 ```
 
-### Phase 6.5: Reconcile timing.json (Before TTS)
+### Phase 6.5: Reconcile timing.json via LLM (Before TTS)
 
-**This step is mandatory before TTS generation.** Read the `timing.json` file and validate/fix the schema before proceeding.
+**This step is mandatory before TTS generation.** LLM-generated timing.json may have unpredictable field names — snake_case, alternative names, or other variations. A deterministic remap script only handles known cases. Instead, use an LLM to understand intent and normalize the JSON regardless of naming convention.
 
-Run this reconciliation script to detect and remap any field name mismatches:
+**Steps:**
 
-```bash
-node -e "
-const fs = require('fs');
-const path = 'demofly/<name>/recordings/timing.json';
-const raw = JSON.parse(fs.readFileSync(path, 'utf8'));
-let fixed = false;
+1. Read the generated `demofly/<name>/recordings/timing.json`.
+2. Prompt Claude with the exact `TimingData` interface and the generated content, using the template below.
+3. Write the corrected JSON back to `timing.json`.
+4. Validate that the result parses as valid JSON.
 
-// Reconcile top-level field
-const totalDuration = raw.totalDuration ?? raw.total_duration_ms ?? raw.totalDurationMs ?? 0;
-if (!raw.totalDuration && (raw.total_duration_ms || raw.totalDurationMs)) fixed = true;
+**Prompt template** — send this as a message to Claude (or use as a self-prompt):
 
-// Reconcile scene fields
-const scenes = (raw.scenes || []).map(s => {
-  const sceneId = s.sceneId ?? s.id ?? s.scene_id ?? 'unknown';
-  const startMs = s.startMs ?? s.start_ms ?? 0;
-  const endMs = s.endMs ?? s.end_ms ?? 0;
-  const markers = (s.markers || []).map(m => ({
-    action: m.action,
-    target: m.target ?? '',
-    ms: m.ms ?? m.timestamp ?? 0,
-  }));
-  if (!s.sceneId || !('startMs' in s) || !('endMs' in s)) fixed = true;
-  return { sceneId, startMs, endMs, markers };
-});
+```
+Here is a timing.json file generated from a Playwright recording:
 
-const result = { totalDuration, scenes };
-if (fixed) {
-  fs.writeFileSync(path, JSON.stringify(result, null, 2));
-  console.log('RECONCILED: Fixed field names in timing.json (' + scenes.length + ' scenes)');
-} else {
-  console.log('OK: timing.json schema is correct (' + scenes.length + ' scenes)');
+<generated_json>
+{content of timing.json}
+</generated_json>
+
+It MUST conform to this exact TypeScript interface:
+
+interface TimingMarker {
+  action: string;
+  target: string;
+  ms: number;
 }
-"
+
+interface TimingScene {
+  sceneId: string;
+  startMs: number;
+  endMs: number;
+  markers: TimingMarker[];
+}
+
+interface TimingData {
+  totalDuration: number;
+  scenes: TimingScene[];
+}
+
+Rules:
+- Field names must be exact camelCase as shown in the interface
+- All numeric values must be numbers (not strings)
+- scenes must be an array, each with sceneId, startMs, endMs, markers
+- markers must be an array of {action, target, ms}
+- Preserve all data — only rename/restructure fields to match the interface
+- If a field is clearly the same data under a different name, map it
+
+Return ONLY the corrected JSON, no explanation.
 ```
 
-Replace `<name>` with the demo name. This catches common mismatches:
-- `total_duration_ms` → `totalDuration`
-- `id` or `scene_id` → `sceneId`
-- `start_ms` → `startMs`
-- `end_ms` → `endMs`
+5. Parse the returned JSON to confirm it is valid. If it parses, write it to `demofly/<name>/recordings/timing.json`. If it does not parse, retry the prompt once.
 
-If the script reports "RECONCILED", the file has been fixed in-place and is now safe
-for the CLI's `generate` and `tts` commands.
+**Why LLM instead of a deterministic script:**
+- LLM output is inherently non-deterministic — the field names could be anything
+- A script only handles cases you've already seen (snake_case, known aliases)
+- An LLM can understand intent and normalize regardless of naming convention
+- This is a two-pass approach: first LLM generates, second LLM validates/fixes
 
 ### Phase 7: Narration (Optional)
 

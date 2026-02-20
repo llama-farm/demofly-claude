@@ -250,7 +250,32 @@ Field definitions:
 > Using the wrong field names causes `findAudioFiles()` to match nothing and
 > `formatDuration()` to return NaN.
 
-**Extraction script** (Node.js one-liner the agent can run):
+### ⛔ Anti-Patterns: timing.json Field Names
+
+The CLI's `TimingData` interface requires **exact** camelCase field names. LLMs
+frequently produce variations. Here are wrong vs right examples:
+
+**Snake_case (most common mistake):**
+```
+⛔ WRONG: { "total_duration_ms": 25672, "scenes": [{ "id": "scene-1", "start_ms": 0, "end_ms": 13675 }] }
+✅ RIGHT: { "totalDuration": 25672, "scenes": [{ "sceneId": "scene-1", "startMs": 0, "endMs": 13675 }] }
+```
+
+**Renamed fields (less obvious but equally broken):**
+```
+⛔ WRONG: { "duration": 25672, "scenes": [{ "scene_id": "scene-1", "begin": 0, "finish": 13675 }] }
+⛔ WRONG: { "totalDurationMs": 25672, "scenes": [{ "name": "scene-1", "from": 0, "to": 13675 }] }
+```
+
+**The only correct field names are:**
+- Top level: `totalDuration` (not `duration`, `total_duration_ms`, `totalDurationMs`)
+- Scene: `sceneId` (not `id`, `scene_id`, `name`)
+- Scene: `startMs` (not `start_ms`, `begin`, `from`, `start`)
+- Scene: `endMs` (not `end_ms`, `finish`, `to`, `end`)
+- Marker: `action`, `target`, `ms` (these three only)
+
+**Extraction script** — this is the ONLY supported way to produce timing.json.
+Do not write timing.json manually:
 
 ```bash
 node -e "
