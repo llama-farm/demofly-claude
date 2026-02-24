@@ -52,7 +52,7 @@ context.md --> proposal.md --> script.md --> demo.spec.ts + playwright.config.ts
 | `demo.spec.ts` | `demofly/<name>/demo.spec.ts` | Executable Playwright test with timing markers, human-like interactions, fake cursor. |
 | `playwright.config.ts` | `demofly/<name>/playwright.config.ts` | Recording configuration. |
 | `timing.json` | `demofly/<name>/recordings/timing.json` | Scene and action timestamps extracted from DEMOFLY markers in console output. |
-| `transcript.md` | `demofly/<name>/transcript.md` | Optional narration with TTS tags and actual durations derived from timing.json. |
+| `transcript.md` | `demofly/<name>/transcript.md` | Narration transcript with TTS tags and actual durations derived from timing.json. |
 
 ### context.md Format
 
