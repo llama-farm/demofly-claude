@@ -402,11 +402,60 @@ If ffmpeg is not installed, skip this step and note the video is in `.webm` form
 
 ---
 
-## Step 8: Narration
+## Step 8: Visual Analysis (Frame Extraction)
 
-After recording succeeds, generate the narration transcript.
+Before writing narration, extract frames from the recording at beat timestamps so you can see what's on screen at each moment. This grounds narration in visual reality.
 
-Read `demofly/<name>/script.md` and `demofly/<name>/recordings/timing.json`. Generate `demofly/<name>/transcript.md`:
+### 8a. Extract frames
+
+```bash
+bash demofly-claude/plugins/demofly/scripts/extract-frames.sh demofly/<name>
+```
+
+Or manually with ffmpeg:
+
+```bash
+mkdir -p demofly/<name>/qa/frames
+# For each marker timestamp in timing.json:
+ffmpeg -hide_banner -loglevel error -y -ss <seconds> -i demofly/<name>/recordings/video.webm -frames:v 1 demofly/<name>/qa/frames/<label>.png
+```
+
+### 8b. Analyze frames
+
+For each extracted frame, use your vision capability (or describe based on what the test script did) to note:
+- What UI state is visible (empty form, filled form, edit mode, search results, etc.)
+- What text appears in input fields
+- What action is happening (cursor position, button states, etc.)
+
+Write a brief visual description per beat into `demofly/<name>/qa/frame-descriptions.md`:
+
+```markdown
+# Frame Descriptions: <name>
+
+## Beat 1.1 — Open App [at 0ms]
+App loading / blank screen — UI not yet rendered.
+
+## Beat 1.2 — Type Title [at 1702ms]
+QuickNotes app visible. "Create New Note" form shown. Cursor in title field, no text typed yet.
+
+## Beat 1.3 — Type Body [at 3600ms]
+Title field contains "Meeting Notes". Cursor now in body textarea.
+```
+
+**These descriptions are the source of truth for narration.** If a frame shows a blank screen, don't narrate over it. If a frame shows the user typing "Meeting Notes", reference that specific text in the narration.
+
+---
+
+## Step 9: Narration
+
+Generate the narration transcript using **both** the timing data and the frame descriptions.
+
+Read:
+- `demofly/<name>/script.md`
+- `demofly/<name>/recordings/timing.json`
+- `demofly/<name>/qa/frame-descriptions.md` ← **NEW: use this to ground narration in visuals**
+
+Generate `demofly/<name>/transcript.md`:
 
 ```markdown
 # Narration Transcript: <name>
@@ -456,11 +505,20 @@ Narration that exceeds its time window causes audio overlap in the final video. 
 
 **⚠️ The transcript file is parsed directly by the TTS engine.** Do NOT include word counts, budget annotations, verification checkmarks, blockquotes, or any metadata in transcript.md. Every non-header, non-silent line becomes spoken audio. Keep the file clean: only narration text and TTS tags.
 
-After generating the transcript, proceed to Step 9.
+### Vision-Grounded Narration Rules
+
+When writing narration, consult the frame descriptions for each beat:
+
+1. **If the frame shows a blank/loading screen**: Skip narration for that beat or delay it to the next beat.
+2. **Reference specific content**: If the user types "Meeting Notes", say "Meeting Notes" — not "a title".
+3. **Match the visual timing**: If the frame shows the action already completed, use past tense ("That's saved") not future tense ("Now we'll save").
+4. **Describe what's unique**: Instead of "Let's create a note" (generic), say something that references what's actually visible — the app name, the specific feature, the specific data.
+
+After generating the transcript, proceed to Step 10.
 
 ---
 
-## Step 9: Final Assembly
+## Step 10: Final Assembly
 
 **Goal**: Use the `demofly` CLI to generate TTS audio and assemble the final video with narration.
 
@@ -542,7 +600,7 @@ And produces `recordings/final.mp4` (stitched with audio if available, or conver
 > - Total duration: X seconds
 > - Scenes: N
 >
-> **Important**: Please watch the final video to verify visual quality and audio sync. I cannot see the video content — I can only confirm the pipeline completed successfully.
+> **Important**: Please watch the final video to verify visual quality and audio sync. Frame analysis was used to ground narration, but human review is still recommended.
 
 ---
 
@@ -556,6 +614,6 @@ And produces `recordings/final.mp4` (stitched with audio if available, or conver
 
 4. **File-based state.** If the user interrupts and comes back later, re-running `/demofly:create <name>` picks up where they left off based on which files exist.
 
-5. **Visual QA reminder.** After recording, always remind the user to watch the video. You cannot see video content. You can only verify programmatic signals (test pass/fail, timing markers, file sizes).
+5. **Vision-grounded narration.** After recording, always extract frames and analyze them before writing narration. Never write narration blind from timestamps alone — frame descriptions are required context for transcript generation.
 
 6. **One demo at a time.** This command manages one demo per invocation. For multiple demos, the user runs the command multiple times with different names.

@@ -183,18 +183,31 @@ Return ONLY the corrected JSON, no explanation.
 - An LLM can understand intent and normalize regardless of naming convention
 - This is a two-pass approach: first LLM generates, second LLM validates/fixes
 
-### Phase 7: Narration
+### Phase 7: Visual Analysis
 
-Generate `demofly/<name>/transcript.md` with:
+After recording, extract frames at beat timestamps and describe what's on screen:
+
+1. Run `bash demofly-claude/plugins/demofly/scripts/extract-frames.sh demofly/<name>` (or extract manually with ffmpeg).
+2. Analyze each frame — note the UI state, text in fields, cursor position, what action is visible.
+3. Write `demofly/<name>/qa/frame-descriptions.md` with a description per beat.
+
+These descriptions are **required input** for Phase 8.
+
+### Phase 8: Narration
+
+Generate `demofly/<name>/transcript.md` using **timing.json + frame-descriptions.md**:
 - Per-beat narration text, organized by beat number matching script.md (e.g., Beat 1.1, Beat 1.2, Beat 2.1).
 - Actual beat timestamps and available time windows from timing.json markers.
+- **Vision-grounded**: Reference specific content visible in frames (actual text being typed, specific UI elements). Do not write generic narration.
+- **Skip beats where frame shows blank/loading screen** — don't narrate over nothing.
+- **Match visual timing**: If the frame shows the action already done, narrate in past tense. If the frame shows the action about to happen, narrate in present/future tense.
 - **Word budget per beat**: ~2.5 words/sec × window duration × 0.6. Hard cap at 2.5 words/sec × window. Beats under 1.5s window get no narration (mark silent). See `demo-workflow` skill Section 7 for the budget table.
 - TTS-compatible tags in bracket format: `[warmly]`, `[confidently]`, `[excited]`, `[pause: 0.5s]`, etc. See the `demo-workflow` skill Section 7 for the full tag reference.
 - Estimated read time vs. available window per beat. Narration should fill 40-70% of each beat's window.
 - Silent beats from script.md are omitted (they produce no audio clip).
 - **Audio that exceeds the scene window will be hard-trimmed by the CLI.** Respect the word budget to avoid abrupt cuts.
 
-### Phase 8: Final Assembly
+### Phase 9: Final Assembly
 
 Delegate TTS and video assembly to the `demofly` CLI:
 
