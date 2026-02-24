@@ -71,7 +71,8 @@ Use `Glob` to check for these files. Then apply this logic:
 | `demofly/<name>/proposal.md` exists but no `script.md` | Script (Step 5) |
 | `demofly/<name>/script.md` exists but no `demo.spec.ts` | Playwright Generation (Step 6) |
 | `demofly/<name>/demo.spec.ts` exists but no `recordings/` with video | Recording (Step 7) |
-| `demofly/<name>/recordings/` contains video but no `recordings/final.mp4` or `recordings/final.webm` | Final Assembly (Step 9) |
+| `demofly/<name>/recordings/` contains video but no `transcript.md` | Narration (Step 8) |
+| `demofly/<name>/transcript.md` exists but no `recordings/final.mp4` or `recordings/final.webm` | Final Assembly (Step 9) |
 | `demofly/<name>/recordings/final.mp4` or `recordings/final.webm` exists | Demo is complete -- ask the user if they want to re-record, add narration, or start fresh |
 
 Tell the user what phase you are starting from and why.
@@ -401,13 +402,11 @@ If ffmpeg is not installed, skip this step and note the video is in `.webm` form
 
 ---
 
-## Step 8: Narration (Optional)
+## Step 8: Narration
 
-After recording succeeds, ask the user: **"Would you like me to generate a narration transcript for this demo?"**
+After recording succeeds, generate the narration transcript.
 
-If **no**, proceed directly to Step 9 (Final Assembly) without TTS.
-
-If **yes**, read `demofly/<name>/script.md` and `demofly/<name>/recordings/timing.json`. Generate `demofly/<name>/transcript.md`:
+Read `demofly/<name>/script.md` and `demofly/<name>/recordings/timing.json`. Generate `demofly/<name>/transcript.md`:
 
 ```markdown
 # Narration Transcript: <name>
@@ -438,7 +437,7 @@ After generating the transcript, proceed to Step 9.
 
 ## Step 9: Final Assembly
 
-**Goal**: Use the `demofly` CLI to generate TTS audio (if narration was requested) and assemble the final video.
+**Goal**: Use the `demofly` CLI to generate TTS audio and assemble the final video with narration.
 
 ### Check demofly CLI availability
 
@@ -465,15 +464,15 @@ If this also fails, or if `demofly` is not found at all, tell the user:
 >
 > Your recording and artifacts are complete — you can run assembly manually later:
 > ```
-> demofly tts <name>        # if narration was generated
-> demofly generate <name>   # assemble final video
+> demofly tts <name>        # generate narration audio
+> demofly generate <name>   # assemble final video with narration
 > ```
 
 Then **STOP** the assembly step. The demo is still usable — the raw video and timing data are in `demofly/<name>/recordings/`.
 
-### Run TTS (if transcript was generated)
+### Run TTS
 
-If `demofly/<name>/transcript.md` was generated in Step 8:
+Generate narration audio from the transcript:
 
 ```bash
 demofly tts <name>
