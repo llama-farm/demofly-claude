@@ -416,12 +416,10 @@ Total video duration: X.Xs
 ## Scene 1: <title>
 
 ### Beat 1.1 — <label> [at Xms, window: X.Xs]
-**Narration read time**: ~Xs
 
 <narration text with TTS tags>
 
 ### Beat 1.2 — <label> [at Xms, window: X.Xs]
-**Narration read time**: ~Xs
 
 <narration text with TTS tags>
 
@@ -430,6 +428,33 @@ Total video duration: X.Xs
 ```
 
 Use **actual beat timestamps from timing.json**, not the estimated targets from the proposal. Each beat's narration must fit within its available window (the time until the next beat's marker).
+
+### Word Budget Rule (CRITICAL)
+
+Narration that exceeds its time window causes audio overlap in the final video. Enforce a strict word budget per beat:
+
+- **Pacing: ~2.5 words per second** for natural TTS output
+- **Budget = window duration × 2.5 words/sec × 0.6** (target 60% fill)
+- **Hard cap = window duration × 2.5 words/sec** (never exceed this)
+
+| Window | Budget (60%) | Hard cap |
+|--------|-------------|----------|
+| 1.0s   | 1-2 words   | 2 words  |
+| 2.0s   | 3 words     | 5 words  |
+| 3.0s   | 4-5 words   | 7 words  |
+| 5.0s   | 7-8 words   | 12 words |
+| 8.0s   | 12 words    | 20 words |
+| 10.0s  | 15 words    | 25 words |
+
+**If narration doesn't fit in the budget:**
+1. Cut adjectives and filler first
+2. Shorten to the essential point
+3. If still too long, split the idea — keep the most important half, drop the rest
+4. **Never** try to cram more words in — the CLI will hard-trim audio that overflows the scene window, which sounds worse than shorter narration
+
+**Beats with windows under 1.5s**: Skip narration entirely. Mark as silent. These are transition moments — let the viewer watch.
+
+**⚠️ The transcript file is parsed directly by the TTS engine.** Do NOT include word counts, budget annotations, verification checkmarks, blockquotes, or any metadata in transcript.md. Every non-header, non-silent line becomes spoken audio. Keep the file clean: only narration text and TTS tags.
 
 After generating the transcript, proceed to Step 9.
 

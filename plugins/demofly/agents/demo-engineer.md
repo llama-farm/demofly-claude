@@ -188,9 +188,11 @@ Return ONLY the corrected JSON, no explanation.
 Generate `demofly/<name>/transcript.md` with:
 - Per-beat narration text, organized by beat number matching script.md (e.g., Beat 1.1, Beat 1.2, Beat 2.1).
 - Actual beat timestamps and available time windows from timing.json markers.
+- **Word budget per beat**: ~2.5 words/sec × window duration × 0.6. Hard cap at 2.5 words/sec × window. Beats under 1.5s window get no narration (mark silent). See `demo-workflow` skill Section 7 for the budget table.
 - TTS-compatible tags in bracket format: `[warmly]`, `[confidently]`, `[excited]`, `[pause: 0.5s]`, etc. See the `demo-workflow` skill Section 7 for the full tag reference.
 - Estimated read time vs. available window per beat. Narration should fill 40-70% of each beat's window.
 - Silent beats from script.md are omitted (they produce no audio clip).
+- **Audio that exceeds the scene window will be hard-trimmed by the CLI.** Respect the word budget to avoid abrupt cuts.
 
 ### Phase 8: Final Assembly
 

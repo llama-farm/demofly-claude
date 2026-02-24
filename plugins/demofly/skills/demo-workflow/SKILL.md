@@ -929,15 +929,41 @@ Tags are compatible with the Kokoro TTS engine used by `demofly tts`.
   than adding more words. Silence during a visual demo is fine — the viewer is
   watching the screen.
 
+### Word Budget Rule (CRITICAL — Prevents Audio Overlap)
+
+Narration that exceeds its time window causes audio to bleed into the next scene
+in the final video. The CLI adds a safety trim (atrim), but trimmed audio sounds
+abrupt. **Respect the budget so trimming never activates.**
+
+**Pacing: ~2.5 words per second** for natural Kokoro TTS output at 1.0x speed.
+
+Calculate per-beat budgets from timing.json windows:
+
+| Window | Target (60%) | Hard cap (100%) |
+|--------|-------------|-----------------|
+| 1.0s   | 1-2 words   | 2 words         |
+| 2.0s   | 3 words     | 5 words         |
+| 3.0s   | 4-5 words   | 7 words         |
+| 5.0s   | 7-8 words   | 12 words        |
+| 8.0s   | 12 words    | 20 words        |
+| 10.0s  | 15 words    | 25 words        |
+
+**Formula**: `budget = floor(window_seconds × 2.5 × 0.6)` words target,
+`hard_cap = floor(window_seconds × 2.5)` words maximum.
+
+**Beats with windows under 1.5s**: Skip narration entirely. Mark as silent.
+These are micro-transitions — let the viewer watch.
+
 ### Adjusting Narration to Fit Timing
 
-After generating transcript.md, check each beat:
+After generating transcript.md, check each beat against its word budget:
 
-- **Read time < per-beat window**: Good. Add `[pause]` tags or let silence fill
-  the gap. Silence while the viewer watches an action is natural.
-- **Read time > per-beat window**: Trim the narration. Cut adjectives and filler
-  first. If still too long, split into two sentences and drop the less important
-  one. Never speed-read — reduce content instead.
+- **Word count ≤ budget**: Good. Add `[pause]` tags or let silence fill the gap.
+  Silence while the viewer watches an action is natural.
+- **Word count > budget but ≤ hard cap**: Acceptable, but consider trimming.
+- **Word count > hard cap**: **Must trim.** Cut adjectives and filler first. If
+  still too long, keep only the essential point — drop the rest. Never try to
+  cram more words in.
 - **Rule of thumb**: Narration should fill 40-70% of the beat's available window.
   The rest is natural silence while the viewer watches the interactions.
 
