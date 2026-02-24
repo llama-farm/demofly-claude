@@ -333,7 +333,7 @@ Tell the user: **"Playwright scripts are ready. Moving to recording."**
 ### Run the test
 
 ```bash
-npx playwright test demofly/<name>/demo.spec.ts --config demofly/<name>/playwright.config.ts --headed 2>&1
+npx playwright test demofly/<name>/demo.spec.ts --config demofly/<name>/playwright.config.ts 2>&1
 ```
 
 Use a Bash timeout of **600000ms** (10 minutes).

@@ -102,7 +102,7 @@ Generate `demofly/<name>/demo.spec.ts` from the script:
 
 Run the recording:
 ```bash
-cd <project-root> && npx playwright test demofly/<name>/demo.spec.ts --config=demofly/<name>/playwright.config.ts --headed 2>&1 | tee output.log
+cd <project-root> && npx playwright test demofly/<name>/demo.spec.ts --config=demofly/<name>/playwright.config.ts 2>&1 | tee output.log
 ```
 
 Set Bash timeout to 600000ms for recording commands.
