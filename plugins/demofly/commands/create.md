@@ -416,18 +416,22 @@ Total video duration: X.Xs
 ## Scene 1: <title>
 
 ### Beat 1.1 — <label> [at Xms, window: X.Xs]
-**Narration read time**: ~Xs
+**Word budget**: N words | **Narration read time**: ~Xs
 
-<narration text with TTS tags>
+<narration>[warmly] Your narration text goes here.</narration>
 
 ### Beat 1.2 — <label> [at Xms, window: X.Xs]
-**Narration read time**: ~Xs
+**Word budget**: N words | **Narration read time**: ~Xs
 
-<narration text with TTS tags>
+<narration>More narration text for this beat.</narration>
 
 ## Scene 2: <title>
 ...
 ```
+
+**CRITICAL: Wrap all narration text in `<narration>` tags.** The TTS engine ONLY reads text inside `<narration>...</narration>` tags. Everything outside the tags (headers, word budgets, metadata, comments) is completely ignored. This prevents metadata from leaking into the audio output.
+
+TTS directives like `[warmly]`, `[pause: 0.3s]` go **inside** the `<narration>` tags — they are stripped before synthesis.
 
 Use **actual beat timestamps from timing.json**, not the estimated targets from the proposal. Each beat's narration must fit within its available window (the time until the next beat's marker).
 

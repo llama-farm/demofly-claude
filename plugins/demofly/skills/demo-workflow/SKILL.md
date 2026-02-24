@@ -850,6 +850,10 @@ the CLI handles mechanical transformations.
 
 ### transcript.md Format
 
+**CRITICAL: All narration text MUST be wrapped in `<narration>` tags.** The TTS engine
+only reads text inside these tags. Everything outside (headers, word budgets, metadata,
+comments) is completely ignored. This prevents metadata from leaking into audio output.
+
 ```markdown
 # Demo Transcript: [Demo Name]
 
@@ -858,35 +862,35 @@ Generated from timing.json after recording on [date].
 ## Scene 1: Dashboard Overview
 
 ### Beat 1.1 — Introduction [at 0ms, window: 5.2s]
+**Word budget**: 8 words | **Hard cap**: 13 words
 
-[warmly] TaskFlow gives your team a single place to track every
-project.
+<narration>[warmly] TaskFlow gives your team a single place to track every project.</narration>
 
 ### Beat 1.2 — Dashboard Tour [at 5200ms, window: 4.6s]
+**Word budget**: 7 words | **Hard cap**: 11 words
 
-Here's the dashboard — [pause: 0.3s] active projects, recent
-activity, team availability at a glance.
+<narration>Here's the dashboard — [pause: 0.3s] active projects, recent activity, team availability at a glance.</narration>
 
 ### Beat 1.3 — Transition [at 9800ms, window: 2.6s]
+**Word budget**: 4 words | **Hard cap**: 6 words
 
-Let's create something new.
+<narration>Let's create something new.</narration>
 
 ## Scene 2: Create a Project
 
 ### Beat 2.1 — Open Form [at 12400ms, window: 3.8s]
 
-[confidently] We'll start by clicking New Project.
-
-_(Beat 2.1 silent portion: modal opens — no audio)_
+_(Beat 2.1 silent — modal opens, no narration)_
 
 ### Beat 2.2 — Fill Form [at 16200ms, window: 8.1s]
+**Word budget**: 12 words | **Hard cap**: 20 words
 
-Give it a name, [pause: 0.3s] set a deadline, [pause: 0.3s]
-and assign a team lead.
+<narration>Give it a name, [pause: 0.3s] set a deadline, [pause: 0.3s] and assign a team lead.</narration>
 
 ### Beat 2.3 — Submit [at 24300ms, window: 3.2s]
+**Word budget**: 5 words | **Hard cap**: 8 words
 
-[casual] That's it — you're ready to go.
+<narration>[casual] That's it — you're ready to go.</narration>
 
 _(Beat 2.3 silent portion: redirect — no audio)_
 ```
