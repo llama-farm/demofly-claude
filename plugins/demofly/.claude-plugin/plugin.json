@@ -8,5 +8,13 @@
   },
   "repository": "https://github.com/llama-farm/demofly-claude",
   "license": "MIT",
-  "keywords": ["demo", "video", "playwright", "web", "automation", "recording", "narration"]
+  "keywords": [
+    "demo",
+    "video",
+    "playwright",
+    "web",
+    "automation",
+    "recording",
+    "narration"
+  ]
 }
