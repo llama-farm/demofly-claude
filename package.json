@@ -1,6 +1,6 @@
 {
   "name": "demofly-claude",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "type": "module",
   "description": "DemoFly turns your product into a polished demo video in minutes — no recording, no editing, no scripting. Just point it at your app, and DemoFly automatically navigates your product, captures every screen, and generates a professional voiceover that walks viewers through the experience. All AI, zero effort.",
   "main": "index.js",

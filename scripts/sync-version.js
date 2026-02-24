@@ -20,33 +20,13 @@ if (!version) {
   process.exit(1);
 }
 
-const files = [
-  "plugins/demofly/.claude-plugin/plugin.json",
-  ".claude-plugin/marketplace.json",
-];
-
-for (const file of files) {
-  const filePath = resolve(root, file);
-  try {
-    const content = JSON.parse(readFileSync(filePath, "utf-8"));
-
-    // Top-level version
-    if (content.version !== undefined) {
-      content.version = version;
-    }
-
-    // marketplace.json has plugins[].version
-    if (Array.isArray(content.plugins)) {
-      for (const plugin of content.plugins) {
-        if (plugin.version !== undefined) {
-          plugin.version = version;
-        }
-      }
-    }
-
-    writeFileSync(filePath, JSON.stringify(content, null, 2) + "\n", "utf-8");
-    console.log(`  ✓ ${file} → ${version}`);
-  } catch (err) {
-    console.warn(`  ⚠ Skipped ${file}: ${err.message}`);
-  }
+const filePath = resolve(root, "plugins/demofly/.claude-plugin/plugin.json");
+try {
+  const content = JSON.parse(readFileSync(filePath, "utf-8"));
+  content.version = version;
+  writeFileSync(filePath, JSON.stringify(content, null, 2) + "\n", "utf-8");
+  console.log(`  ✓ plugin.json → ${version}`);
+} catch (err) {
+  console.error(`  ✗ Failed to update plugin.json: ${err.message}`);
+  process.exit(1);
 }
