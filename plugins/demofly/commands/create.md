@@ -146,36 +146,51 @@ Tell the user: **"Product context is ready. Moving to proposal."**
 
 **Goal**: Create `demofly/<name>/proposal.md` and get user approval.
 
-First, ask the user: **"What should this demo show? What story do you want to tell?"**
+First, ask the user: **"What should this demo show? What story do you want to tell? Who's the audience?"**
 
-Combine the user's intent with `demofly/context.md` to generate `demofly/<name>/proposal.md`:
+Combine the user's intent with `demofly/context.md` to generate a **story-driven** proposal. The proposal must define a narrative arc — not just list features to show. Start with the audience's pain point, not the product name.
+
+Refer to the `demo-workflow` skill's proposal.md format for the full template. The key sections are:
 
 ```markdown
 # Demo Proposal: <name>
 
-## Concept
-<!-- What story this demo tells, who the audience is -->
+**Product:** <product name>
+**Target Duration:** <e.g. 90 seconds>
+**Audience:** <who is watching and what they care about>
 
-## Demo Data
-<!-- Specific names, values, text that will appear on screen during the demo -->
-<!-- The user must prepare this data in the app before recording -->
+## Narrative Arc
 
-## Target Duration
-<!-- Total estimated duration, e.g., "2-3 minutes" -->
+### Hook (first 5-10s)
+<!-- A question, pain point, or surprising claim. NEVER open with the product name. -->
+
+### Problem (10-25s)
+<!-- The frustration or inefficiency that exists today. -->
+
+### Solution / Rising Action (25-60s)
+<!-- The product in action, building toward the key feature. -->
+
+### Hero Moment (the climax)
+<!-- The single most impressive moment. Mark the scene with ⭐ HERO. -->
+
+### Payoff / Close (final 10s)
+<!-- Specific, confident wrap. Quantify value. Call to action. -->
 
 ## Scenes
 
-### Scene 1: <title>
-- **Duration**: ~Xs
-- **What happens**: <brief description of on-screen action>
-- **Key moment**: <the "wow" or important beat in this scene>
+### Scene 1: <title> [target: Xs]
+- **What happens**: <description of action AND what the viewer feels/learns>
+- **Key moment**: <the beat that matters most in this scene>
 
-### Scene 2: <title>
-...
+### Scene N: <title> ⭐ HERO [target: Xs]
+- **What happens**: <this is the "wow" moment — describe it with extra detail>
+- **Key moment**: <the payoff that makes viewers want the product>
 
-### Scene N: <title>
-...
+## Demo Data
+<!-- Specific names, values, text that will appear on screen -->
 ```
+
+**Important:** Every proposal must identify exactly one ⭐ HERO scene. This is the moment that gets extra pacing, emotional weight, and polish throughout the pipeline. If the user doesn't specify one, recommend the most visually impressive or emotionally resonant feature.
 
 Present the proposal to the user. **Do not continue until they approve it.** If they request changes, update the proposal and re-present it.
 
@@ -187,7 +202,17 @@ Once approved, tell the user: **"Proposal approved. Moving to script generation.
 
 **Goal**: Create `demofly/<name>/script.md` from the approved proposal.
 
-Read `demofly/<name>/proposal.md` and `demofly/context.md`. Generate `demofly/<name>/script.md`:
+Read `demofly/<name>/proposal.md` and `demofly/context.md`. Generate `demofly/<name>/script.md`.
+
+**Narrative-first scripting:** The script must follow the narrative arc from the proposal. The narration tells a story — it does NOT describe what's happening on screen. Refer to the Narration Style Guide in the `demo-workflow` skill for detailed guidance, anti-patterns, and examples.
+
+Key narration rules for scripting:
+- **Open with the hook from the proposal's Narrative Arc** — a question or pain point, never the product name
+- **Narrate the invisible** — the "why", the time saved, the problem solved. The viewer can see the clicks.
+- **Use silence strategically** — after impressive moments, let the result speak for itself
+- **Mark the ⭐ HERO scene** — give it longer pauses, more emotional weight, slower pacing
+- **Allow multi-beat narration flows** — when 2-3 beats form a natural sequence (like filling a form), write one flowing sentence with sync points rather than choppy fragments
+- **Run the Narration Quality Checklist** (from the skill doc) before finalizing
 
 ```markdown
 # Demo Script: <name>
@@ -201,9 +226,18 @@ Read `demofly/<name>/proposal.md` and `demofly/context.md`. Generate `demofly/<n
 | "<narration phrase>" | <action description> |
 | *(silence — description)* | <wait or transition action> |
 
+### 1.1–1.3 — <label> [spanning: scene-1:click:x → scene-1:type-end:y]
+
+| Words | Action |
+|-------|--------|
+| "<flowing narration phrase," | First action |
+| "continuation of same sentence," | Second action |
+| "and the finish." | Third action |
+
 ---
 
-## Scene 2: <title> [target: Xs]
+## Scene N: <title> ⭐ HERO [target: Xs]
+<!-- Hero scene: slower pacing, extra pauses, most emotional narration -->
 ...
 ```
 
@@ -405,6 +439,13 @@ If ffmpeg is not installed, skip this step and note the video is in `.webm` form
 ## Step 8: Narration
 
 After recording succeeds, generate the narration transcript.
+
+**This is where storytelling matters most.** The transcript is the final narration your viewer hears. Follow the Narration Style Guide from the `demo-workflow` skill. Key reminders:
+- Narrate the invisible — add context the visuals can't show (the "why", the time saved, the value)
+- Use the anti-pattern list to avoid mirror narration, filler, and clichés
+- Give the ⭐ HERO scene extra emotional weight and breathing room
+- Run the Narration Quality Checklist before finalizing
+- Allow multi-beat narration flows where beats form a natural sequence
 
 Read `demofly/<name>/script.md` and `demofly/<name>/recordings/timing.json`. Generate `demofly/<name>/transcript.md`:
 

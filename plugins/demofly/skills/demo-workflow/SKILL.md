@@ -96,20 +96,52 @@ Refresh it when the product changes significantly, not on every demo run.
 
 This file requires explicit user approval before proceeding to script.md.
 
+The proposal defines the **story** being told, not just a list of features to show.
+Every proposal must start with the audience's pain point, not the product name.
+Structure the demo as a narrative with rising action, not a feature walkthrough.
+
 ```markdown
 # Demo Proposal: [Demo Name]
 
 **Product:** [Product name]
 **Target Duration:** [e.g. 90 seconds]
-**Concept:** [One paragraph describing the demo's narrative arc]
+**Audience:** [Who is watching? What do they care about?]
+
+## Narrative Arc
+
+### Hook (first 5-10s)
+[How does the demo grab attention? A question, a pain point, a surprising claim.
+NEVER open with the product name or a definition. Open with the viewer's problem.]
+
+### Problem (10-25s)
+[What frustration or inefficiency exists today? What's the "before" world?
+Make the viewer nod and think "yes, I have that problem."]
+
+### Solution / Rising Action (25-60s)
+[Show the product working. Build toward the key feature. Each scene should
+raise the stakes — from simple to impressive.]
+
+### Hero Moment (the climax — mark with ⭐)
+[The single most impressive moment. The feature that makes viewers think
+"I want this." This scene gets extra pacing, emotional weight, and polish.
+Identify it explicitly — every demo has one.]
+
+### Payoff / Close (final 10s)
+[Quick, confident wrap. Specific to this demo — not generic. Quantify
+the value if possible ("5 minutes vs 6 hours"). End with a call to action.]
 
 ## Scenes
 
 ### Scene 1: [Title] [target: Xs]
-[2-3 sentence description of what happens and what the viewer sees]
+[2-3 sentence description. What happens AND what the viewer feels/learns.]
 
 ### Scene 2: [Title] [target: Xs]
 [2-3 sentence description]
+
+### Scene N: [Title] ⭐ HERO [target: Xs]
+[This is the hero scene — the "wow" moment. It gets longer duration,
+slower pacing in the Playwright test, and the most emotionally resonant
+narration. Mark exactly one scene as the hero.]
 
 [... additional scenes]
 
@@ -120,6 +152,27 @@ This file requires explicit user approval before proceeding to script.md.
 ## Notes
 - [Any assumptions or open questions for the user]
 ```
+
+#### Hero Scene Guidance
+
+Every demo should have exactly **one hero scene** — the moment that makes viewers
+want the product. Mark it with ⭐ HERO in the scene heading.
+
+The hero scene gets special treatment throughout the pipeline:
+- **In the proposal:** Identified and described with extra detail
+- **In the script:** Longer pauses before and after, more narration breathing room
+- **In demo.spec.ts:** Deliberately slower pacing — add extra `waitForTimeout` calls
+  so the viewer can absorb what's happening
+- **In the transcript:** Highest-energy emotion tags, strategic pauses before the
+  reveal, silence after the impressive moment lands
+
+Examples of hero scenes:
+- **DemoFly demoing itself:** The generation progress view — watching scenes appear
+  in real-time (recording → narrating → complete)
+- **A project management app:** AI auto-generating a full task breakdown from a
+  one-line description
+- **An analytics dashboard:** A complex query returning results in under a second
+- **A design tool:** One-click export producing a pixel-perfect deliverable
 
 ---
 
@@ -699,26 +752,128 @@ A markdown table with `Words` and `Action` columns:
 2. Every beat heading MUST include a marker ID after `→` that exists in
    demo.spec.ts.
 3. Scene headings use `## Scene N: Title [target: Xs]` — same as before.
+   Mark the hero scene with `⭐ HERO`: `## Scene N: Title ⭐ HERO [target: Xs]`
 4. Target duration is guidance, not a hard limit.
 5. Every scene must have at least one beat.
 6. Beats within a scene are ordered by execution sequence.
+7. **Multi-beat spanning** — When 2-3 beats form a natural narration flow,
+   use a range heading: `### {scene}.{start}–{scene}.{end} — {label} [spanning: {first-marker} → {last-marker}]`.
+   The narration reads as one flowing sentence with sync points aligning
+   key phrases to their on-screen actions. This avoids choppy sentence-per-beat patterns.
 
-### Writing Good Narration
+### Narration Style Guide
 
-- **Conversational, not corporate.** Write like you are showing the product to a
-  colleague, not presenting to a board room.
-- **1-3 sentences per beat.** Each beat's narration should be a natural "breath
-  group" for TTS.
-- **Match narration to actions.** The Words column should describe what is happening
-  in the Action column of the same beat.
-- **Avoid filler.** Do not say "as you can see" or "now I'm going to" — just
-  describe what is happening and why it matters.
-- **Highlight value.** Instead of "click the Export button", say "Export the report
-  with one click."
-- **Let the visuals speak.** Silent beats give the viewer a moment to absorb what
-  just happened on screen — do not narrate every click.
+Good demo narration tells a story. Bad demo narration reads the screen aloud. The
+difference between a forgettable demo and a compelling one is almost entirely in the
+narration — the visuals show *what*; the narration explains *why it matters*.
+
+#### The Core Principle: Narrate the Invisible
+
+The viewer can already see what's happening on screen. Your narration must add what
+the visuals can't show: the problem being solved, the time being saved, the
+frustration being eliminated, the "why" behind each action. If you muted the
+narration and the demo lost nothing, the narration was worthless.
+
+**The Mute Test:** Read your narration without watching the video. If it's not
+interesting as standalone audio — if it doesn't tell a micro-story — rewrite it.
+
+#### Before/After Examples
+
+**Mirror narration (BAD) → Value narration (GOOD):**
+
+| ❌ Mirror (describes the screen) | ✅ Value (adds context) |
+|---|---|
+| "Click the New Project button." | "A new project starts with three fields — name, deadline, lead. That's it." |
+| "Type a description in the text field." | "Tell it what you need in plain English. No templates, no configuration files." |
+| "The dashboard shows your recent projects." | "Everything you're working on, at a glance. No digging through folders." |
+| "Click Generate to start the process." | "One click. Watch what happens next." |
+| "The loading spinner indicates processing." | *(silence — let the viewer watch it work)* |
+| "As you can see, the results have appeared." | "Three seconds. What used to take an hour." |
+| "That's ProductName — simple and powerful." | "From idea to published demo in under five minutes. Try it yourself." |
+
+#### Narration Anti-Patterns
+
+Avoid these patterns — they are the hallmarks of robotic, LLM-generated narration:
+
+1. **Mirror narration** — Describing exactly what the viewer can see.
+   - ❌ "I'm clicking the Sign Up button to sign up."
+   - ✅ *(silence during click)* → "Account created. No email verification, no waiting."
+
+2. **Feature dumping** — Product-speak that sounds like marketing copy.
+   - ❌ "This feature allows you to seamlessly collaborate with your team in real-time."
+   - ✅ "Your whole team sees changes live. No refresh needed."
+
+3. **Hedging and filler** — Words that add length without meaning.
+   - ❌ "You can easily and simply just click here to quickly..."
+   - ✅ "Click. Done." (Let the speed prove "easy" — don't say it.)
+
+4. **Captain Obvious** — Narrating things the viewer figured out 2 seconds ago.
+   - ❌ "As you can see, the page has loaded and we are now on the dashboard."
+   - ✅ *(skip — move to the next meaningful action)*
+
+5. **Cliché closers** — Every demo ever ends this way. Don't.
+   - ❌ "That's [ProductName] — fast, simple, and powerful."
+   - ✅ "From zero to a published demo in four minutes. Your first one's free."
+
+6. **Permission narration** — Asking the viewer's permission to proceed.
+   - ❌ "Now let's go ahead and take a look at the settings page."
+   - ✅ "Settings." *(navigate)* "Three toggles. No docs required."
+
+#### Opening Patterns That Work
+
+The first 5 seconds determine if someone keeps watching. Never open with the product
+name or a definition. Open with the *audience's problem*:
+
+- **Pain-point question:** "How long does it take your team to make a product demo?"
+- **Surprising contrast:** "Most product demos take 6 hours. This one took 5 minutes."
+- **Bold claim:** "What if your next demo recorded itself?"
+- **Story start:** "Last Tuesday, a developer needed a demo for a board meeting. She had 20 minutes."
+
+#### Pacing and Rhythm
+
+- **Vary sentence length.** Short sentences punch. Longer sentences flow and give the viewer time to absorb complex actions. Mix both.
+- **Use silence strategically.** After something impressive happens, *don't narrate it* — let the viewer sit with it. A 2-second pause after a fast result says "that was fast" better than any words.
+- **Build to peaks.** Start calm and conversational. Accelerate through mechanical steps (form fills, navigation). Slow down and add weight for the "wow" moment. End with a quick, confident close.
+- **Front-load value.** Each sentence should lead with the benefit or result, not the action. "Three seconds flat" before "to generate the whole thing."
+
+#### Multi-Beat Narration Flows
+
+Narration doesn't have to be chopped into one sentence per beat. When 2-3 beats
+form a natural flow (like filling a form), write a single flowing paragraph that
+spans them. Use sync points to indicate when key phrases align with actions:
+
+```markdown
+### 2.1–2.3 — Create Flow [spanning: scene-2:click:new-btn → scene-2:type-end:name]
+
+| Words | Action |
+|-------|--------|
+| "Name it," | Type project name |
+| "set a deadline," | Click date picker, select date |
+| "pick a lead — and you're building." | Select team lead, click Create |
+```
+
+The narration reads as one fluid sentence, but sync points align key phrases with
+their corresponding on-screen actions. This avoids the choppy "sentence fragment
+per beat" problem.
+
+#### Narration Quality Checklist
+
+Before finalizing any transcript, verify:
+
+- [ ] **Hook test:** Does the opening grab attention in under 5 seconds? (No product name or definition as the first words.)
+- [ ] **Mute test:** Is the narration interesting to *listen to* without the video?
+- [ ] **Value test:** Does every sentence add context beyond what's visible on screen?
+- [ ] **Wow test:** Is there at least one moment with dramatic pacing — a pause before a reveal, silence after something impressive?
+- [ ] **Anti-pattern test:** Zero instances of mirror narration, filler phrases, or cliché closers?
+- [ ] **Closing test:** Is the last sentence specific to this product and this demo (not a generic "that's [X]")?
+- [ ] **Flow test:** Does the narration feel like one continuous story, not a list of disconnected observations?
+- [ ] **Hero test:** Does the most impressive feature get noticeably more attention — slower pacing, emotional weight, breathing room?
 
 ### Complete Example
+
+Notice how this example uses the narrative arc (hook → problem → solution → hero → payoff),
+multi-beat spanning, a hero scene, value narration instead of mirror narration, and
+strategic silence:
 
 ```markdown
 # Script: TaskFlow Demo
@@ -729,102 +884,98 @@ A markdown table with `Words` and `Action` columns:
 
 ---
 
-## Scene 1: First Impression [target: 15s]
+## Scene 1: The Problem [target: 15s]
 
-### 1.1 — Introduction  → `scene-1:start`
-
-| Words | Action |
-|-------|--------|
-| "TaskFlow gives your team a single place to track every project." | Navigate to dashboard; page loads |
-
-### 1.2 — Dashboard Tour  → `scene-1:hover:active-projects`
+### 1.1 — Hook  → `scene-1:start`
 
 | Words | Action |
 |-------|--------|
-| "Here's the dashboard —" | Hover "Active Projects" card |
-| "active projects, recent activity, team availability at a glance." | Hover "Team Availability" panel |
+| "How long does it take to plan a new project at your company?" | Navigate to dashboard; page loads |
+| "A day? A week of back-and-forth emails?" | *(screen static — dashboard visible)* |
+
+### 1.2 — Dashboard Glance  → `scene-1:hover:active-projects`
+
+| Words | Action |
+|-------|--------|
+| *(silence — let viewer take in the dashboard)* | Hover "Active Projects" card, then "Team Availability" panel |
 
 ### 1.3 — Transition  → `scene-1:click:new-project-btn`
 
 | Words | Action |
 |-------|--------|
-| "Let's create something new." | Click "+ New Project" button |
+| "Watch this." | Click "+ New Project" button |
 
 ---
 
-## Scene 2: Create a Project [target: 25s]
+## Scene 2: Three Fields and Done [target: 25s]
 
 ### 2.1 — Open Form  → `scene-2:click:new-project-btn`
 
 | Words | Action |
 |-------|--------|
-| "We'll start by clicking New Project." | Click "+ New Project" button |
-| *(silence — modal opens)* | Wait for modal to appear |
+| *(silence — modal opens)* | Click "+ New Project" button; wait for modal |
 
-### 2.2 — Fill Form  → `scene-2:type-start:project-name`
-
-| Words | Action |
-|-------|--------|
-| "Give it a name," | Type "Q1 Marketing Campaign" in name field |
-| "set a deadline," | Click deadline date picker |
-|  | Select March 15 |
-| "and assign a team lead." | Open team lead dropdown |
-|  | Select "Sarah Chen" |
-
-### 2.3 — Submit  → `scene-2:click:create-btn`
+### 2.2–2.3 — Fill and Submit [spanning: scene-2:type-start:project-name → scene-2:click:create-btn]
 
 | Words | Action |
 |-------|--------|
-| "That's it — you're ready to go." | Click "Create Project" |
-| *(silence — viewer watches redirect)* | Wait for redirect to project page |
+| "Name it," | Type "Q1 Marketing Campaign" in name field |
+| "deadline," | Click date picker, select March 15 |
+| "team lead — done." | Select "Sarah Chen" from dropdown, click "Create Project" |
+| *(silence — viewer watches the instant redirect)* | Wait for redirect to project page |
 
 ---
 
-## Scene 3: AI Suggestions [target: 30s]
+## Scene 3: The AI Moment ⭐ HERO [target: 30s]
 
-### 3.1 — Trigger AI  → `scene-3:click:suggest-btn`
-
-| Words | Action |
-|-------|--------|
-| "Here's where it gets interesting." | Click "AI Suggest Tasks" button |
-
-### 3.2 — Watch AI Work  → `scene-3:wait-start:ai-suggestions`
+### 3.1 — Setup  → `scene-3:click:suggest-btn`
 
 | Words | Action |
 |-------|--------|
-| "TaskFlow's AI analyzes the project and suggests tasks automatically." | *(screen static — spinner visible)* |
-| *(silence — let viewer watch the loading)* | Wait for suggestions to appear |
+| "Now here's the part that changes everything." | Click "AI Suggest Tasks" button |
 
-### 3.3 — Review Results  → `scene-3:wait-end:ai-suggestions`
+### 3.2 — The Reveal  → `scene-3:wait-start:ai-suggestions`
 
 | Words | Action |
 |-------|--------|
-| "It even estimates time for each task based on your team's history." | Hover first suggested task to highlight the time estimate |
-| | Hover second suggested task |
+| *(silence — let the viewer watch AI work)* | Spinner visible; wait for suggestions to appear |
+
+### 3.3 — Impact  → `scene-3:wait-end:ai-suggestions`
+
+| Words | Action |
+|-------|--------|
+| "Ten tasks. Time estimates based on your team's actual history. Five seconds." | Hover first task, then second task to show time estimates |
 
 ### 3.4 — Accept  → `scene-3:click:accept-all-btn`
 
 | Words | Action |
 |-------|--------|
-| "Accept them all with one click." | Click "Accept All" button |
-| *(silence — tasks populate the board)* | Wait for task list to update |
+| *(silence — one click, tasks fill the board)* | Click "Accept All"; wait for task list to update |
 
 ---
 
-## Scene 4: Wrap Up [target: 10s]
+## Scene 4: The Payoff [target: 10s]
 
-### 4.1 — Return to Dashboard  → `scene-4:navigate:dashboard`
-
-| Words | Action |
-|-------|--------|
-| "Back on the dashboard, the new project is already tracked." | Navigate to dashboard |
-
-### 4.2 — Closing  → `scene-4:pause:final`
+### 4.1 — Return  → `scene-4:navigate:dashboard`
 
 | Words | Action |
 |-------|--------|
-| "That's TaskFlow. From zero to a fully planned project in under two minutes." | *(screen static)* |
+| *(silence)* | Navigate to dashboard |
+
+### 4.2 — Close  → `scene-4:pause:final`
+
+| Words | Action |
+|-------|--------|
+| "From nothing to a fully planned project. Ninety seconds. Try it yourself." | *(screen static — dashboard showing new project)* |
 ```
+
+**What makes this example better than a feature walkthrough:**
+- Opens with a pain-point question, not the product name
+- Scene 2 uses multi-beat spanning for a flowing "name it, deadline, team lead — done" rhythm
+- Scene 3 (⭐ HERO) uses strategic silence during AI generation — the *viewer watches it work*
+- The narration after the reveal ("Ten tasks... Five seconds.") focuses on the *result*, not the action
+- The closer is specific and quantified ("Ninety seconds"), not a cliché
+- Silent beats let impressive moments speak for themselves
 
 ---
 

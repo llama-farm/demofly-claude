@@ -73,20 +73,27 @@ If `demofly/context.md` does not exist or is stale, run parallel exploration (se
 
 ### Phase 2: Propose
 
-Create `demofly/<name>/proposal.md` with:
-- A title and one-sentence summary.
-- The target audience and what they should take away.
-- A scene-by-scene outline: for each scene, the page/URL, the key actions, and what the viewer learns.
-- Estimated total duration.
+Create `demofly/<name>/proposal.md` with a **story-driven** structure:
+- A narrative arc: Hook → Problem → Solution → Hero Moment → Payoff
+- Start with the audience's pain point, NOT the product name
+- Identify the target audience and what they should take away
+- A scene-by-scene outline with one scene marked as ⭐ HERO — the moment that makes viewers want the product
+- Estimated total duration
+
+The proposal defines the *story* being told, not just a list of features to demo.
+Refer to the `demo-workflow` skill's proposal.md format for the full template.
 
 Present the proposal to the user. Do not proceed until they approve (they may request changes).
 
 ### Phase 3: Script
 
 Expand the approved proposal into `demofly/<name>/script.md` using the beat-centric format:
+- Follow the narrative arc from the proposal — the script tells a story, not a feature list
 - For each scene, define numbered beats. Each beat pairs a narration fragment (in the Words column) with its ordered actions (in the Action column) and carries a timing marker ID in its heading.
-- Use silent beats for moments where the viewer watches without narration (API loading, page transitions).
-- Use continuation rows when a single phrase maps to multiple sequential actions.
+- **Allow multi-beat narration flows** — when 2-3 beats form a natural sequence, write one flowing sentence with sync points rather than choppy fragments
+- Use silent beats for moments where the viewer watches without narration (API loading, page transitions)
+- Give the ⭐ HERO scene extra pacing and narration breathing room
+- Apply the Narration Style Guide from the `demo-workflow` skill — narrate the invisible, avoid anti-patterns
 - Every beat must reference a marker ID that will exist in demo.spec.ts.
 
 ### Phase 4: Implement
@@ -185,7 +192,17 @@ Return ONLY the corrected JSON, no explanation.
 
 ### Phase 7: Narration
 
-Generate `demofly/<name>/transcript.md` with:
+Generate `demofly/<name>/transcript.md` — this is where storytelling matters most:
+
+**Story quality:**
+- Follow the Narration Style Guide in the `demo-workflow` skill
+- Narrate the invisible — add context the visuals can't show (the "why", the time saved)
+- Avoid all anti-patterns: mirror narration, filler, clichés, Captain Obvious
+- Give the ⭐ HERO scene extra emotional weight, strategic pauses, highest-energy tags
+- Allow narration to flow across multi-beat sequences where natural
+- **Run the Narration Quality Checklist** before finalizing — hook test, mute test, value test, wow test, anti-pattern test, closing test, flow test, hero test
+
+**Technical requirements:**
 - **CRITICAL: Wrap all narration text in `<narration>` tags.** The TTS engine ONLY reads text inside `<narration>...</narration>` tags. Everything outside (headers, word budgets, metadata) is ignored. This prevents metadata from leaking into audio.
 - Per-beat narration text, organized by beat number matching script.md (e.g., Beat 1.1, Beat 1.2, Beat 2.1).
 - Actual beat timestamps and available time windows from timing.json markers.
@@ -194,12 +211,12 @@ Generate `demofly/<name>/transcript.md` with:
 - Silent beats from script.md are omitted (they produce no audio clip).
 - **Audio that exceeds the scene window will be hard-trimmed by the CLI.** Respect the word budget to avoid abrupt cuts.
 
-Example beat:
+Example beat (value narration, not mirror narration):
 ```
 ### Beat 1.1 — Introduction [at 0ms, window: 5.2s]
 **Word budget**: 8 words | **Narration read time**: ~2s
 
-<narration>[warmly] Welcome to the dashboard. Everything you need is right here.</narration>
+<narration>[warmly] How long does it take to make a product demo? [pause: 0.5s] What if the answer was five minutes?</narration>
 ```
 
 ### Phase 8: Final Assembly
