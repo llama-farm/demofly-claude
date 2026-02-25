@@ -78,6 +78,8 @@ Create `demofly/<name>/proposal.md` with a **story-driven** structure:
 - Start with the audience's pain point, NOT the product name
 - Identify the target audience and what they should take away
 - A scene-by-scene outline with one scene marked as ⭐ HERO — the moment that makes viewers want the product
+- Every non-hero scene must include a **magic moment** — a micro-interaction that delights (see "Magic Moments in Non-Hero Scenes" in the skill)
+- The problem section must use vivid, recognition-based framing (see "Show, Don't Tell the Problem" in the skill)
 - Estimated total duration
 
 The proposal defines the *story* being told, not just a list of features to demo.
@@ -94,6 +96,8 @@ Expand the approved proposal into `demofly/<name>/script.md` using the beat-cent
 - Use silent beats for moments where the viewer watches without narration (API loading, page transitions)
 - Give the ⭐ HERO scene extra pacing and narration breathing room
 - Apply the Narration Style Guide from the `demo-workflow` skill — narrate the invisible, avoid anti-patterns
+- Apply the **Pacing Playbook** — silence after questions, breathing room around hero moments, no more than 3 consecutive narrated beats without a pause
+- Ensure all quantified claims are supportable (see "Quantified Claims Must Be Supportable")
 - Every beat must reference a marker ID that will exist in demo.spec.ts.
 
 ### Phase 4: Implement
@@ -198,9 +202,13 @@ Generate `demofly/<name>/transcript.md` — this is where storytelling matters m
 - Follow the Narration Style Guide in the `demo-workflow` skill
 - Narrate the invisible — add context the visuals can't show (the "why", the time saved)
 - Avoid all anti-patterns: mirror narration, filler, clichés, Captain Obvious
+- **Problem section must be vivid** — use "Show, Don't Tell the Problem" guidance. Make the viewer wince in recognition, not just nod.
 - Give the ⭐ HERO scene extra emotional weight, strategic pauses, highest-energy tags
+- **Every non-hero scene needs a magic moment** — a micro-wow interaction that keeps the viewer engaged through the middle
 - Allow narration to flow across multi-beat sequences where natural
-- **Run the Narration Quality Checklist** before finalizing — hook test, mute test, value test, wow test, anti-pattern test, closing test, flow test, hero test
+- **Apply the Pacing Playbook** — silence after questions (1.5-2s), breathing room around hero moments (2-3s before, 1-2s after), no more than 3 consecutive narrated beats without a pause
+- **Validate all quantified claims** — "under five minutes" only if the workflow supports it. When in doubt, use relative claims ("minutes, not hours") instead of absolutes.
+- **Run the full Narration Quality Checklist** before finalizing — all 12 checks including problem vividness, magic moments, pacing, and claims validation
 
 **Technical requirements:**
 - **CRITICAL: Wrap all narration text in `<narration>` tags.** The TTS engine ONLY reads text inside `<narration>...</narration>` tags. Everything outside (headers, word budgets, metadata) is ignored. This prevents metadata from leaking into audio.

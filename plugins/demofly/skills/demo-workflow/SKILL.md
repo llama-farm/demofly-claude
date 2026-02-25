@@ -115,7 +115,9 @@ NEVER open with the product name or a definition. Open with the viewer's problem
 
 ### Problem (10-25s)
 [What frustration or inefficiency exists today? What's the "before" world?
-Make the viewer nod and think "yes, I have that problem."]
+Don't just list pain points — paint a vivid picture that makes the viewer
+wince in recognition. Use specific, embarrassing details. See "Show, Don't
+Tell the Problem" in the Narration Style Guide.]
 
 ### Solution / Rising Action (25-60s)
 [Show the product working. Build toward the key feature. Each scene should
@@ -133,10 +135,11 @@ the value if possible ("5 minutes vs 6 hours"). End with a call to action.]
 ## Scenes
 
 ### Scene 1: [Title] [target: Xs]
-[2-3 sentence description. What happens AND what the viewer feels/learns.]
+[2-3 sentence description. What happens AND what the viewer feels/learns.
+Include the magic moment — what micro-interaction delights in this scene?]
 
 ### Scene 2: [Title] [target: Xs]
-[2-3 sentence description]
+[2-3 sentence description. Identify the magic moment for this scene.]
 
 ### Scene N: [Title] ⭐ HERO [target: Xs]
 [This is the hero scene — the "wow" moment. It gets longer duration,
@@ -173,6 +176,33 @@ Examples of hero scenes:
   one-line description
 - **An analytics dashboard:** A complex query returning results in under a second
 - **A design tool:** One-click export producing a pixel-perfect deliverable
+
+#### Magic Moments in Non-Hero Scenes
+
+The hero scene gets the biggest wow — but **every scene should include at least one
+magic moment**: a micro-interaction that delights or surprises the viewer. Without
+these, mid-demo scenes become the "middle section sag" where viewers mentally check out.
+
+A magic moment is NOT:
+- Clicking a navigation link
+- Filling a form field
+- Viewing a list or layout
+
+A magic moment IS:
+- Clicking "AI Enhance ✨" and watching a transcript rewrite itself in real-time
+- Hovering a voice preview and hearing a 2-second sample
+- Toggling a switch and seeing the entire UI theme change instantly
+- Dragging a scene card and watching the timeline reorder with animation
+
+**For storyboard/editor scenes specifically:** Don't just show the layout. Show a
+power feature in action — AI transcript enhancement, voice swap preview, drag-to-reorder,
+or instant regeneration. The viewer should see something that makes them think
+"oh, that's clever" even in the middle of the demo.
+
+**Proposal checklist addition:** When writing scene descriptions, verify each scene
+has at least one moment tagged as a magic moment. If a scene is purely navigational
+(arriving at a page, viewing a list), either add an interaction that delights or
+merge it into an adjacent scene.
 
 ---
 
@@ -819,6 +849,35 @@ Avoid these patterns — they are the hallmarks of robotic, LLM-generated narrat
    - ❌ "Now let's go ahead and take a look at the settings page."
    - ✅ "Settings." *(navigate)* "Three toggles. No docs required."
 
+#### Show, Don't Tell the Problem
+
+The problem section is where you earn the viewer's attention. Listing pain points
+is not enough — you need to make the viewer *wince in recognition*.
+
+**Clinical (weak):**
+> "Screen recording. Retakes. Editing audio in a timeline. Hours — for two minutes of video."
+
+This lists the problem accurately but doesn't make the viewer *feel* it.
+
+**Vivid (strong):**
+> "You know the drill. Hit record, talk for two minutes, realize you said 'um' fourteen times. Start over. Get it right, then notice your cursor was covering the button. Start over. Sync the audio, export, re-export because the resolution was wrong..."
+
+This makes the viewer relive their own experience. They're nodding and cringing
+before you even show the product.
+
+**How to write vivid problem framing:**
+1. **Use second person** — "You know the drill" puts the viewer in the story
+2. **Include specific, embarrassing details** — saying "um," cursor in the wrong place, wrong export settings. These are recognition triggers.
+3. **Use escalation** — each detail should be slightly more frustrating than the last
+4. **End with an implied "there has to be a better way"** — don't say it, let the viewer think it
+5. **Keep it under 10 seconds** — vivid doesn't mean long. A tight 8-second problem section that makes the viewer wince beats a 15-second recitation of bullet points.
+
+| ❌ Clinical (lists the problem) | ✅ Vivid (makes you feel it) |
+|---|---|
+| "Manual testing is slow and error-prone." | "You just pushed to staging. Now you're clicking through forty pages, checking the same buttons you checked yesterday, wondering if you missed something." |
+| "Documentation gets outdated quickly." | "Your docs say 'click Settings.' The button was renamed to 'Preferences' three sprints ago. Nobody updated the screenshots." |
+| "Demo creation requires multiple tools." | "Screen recorder. Audio editor. Video editor. Subtitle tool. Four apps, two hours, and it still looks like a screencast from 2015." |
+
 #### Opening Patterns That Work
 
 The first 5 seconds determine if someone keeps watching. Never open with the product
@@ -835,6 +894,48 @@ name or a definition. Open with the *audience's problem*:
 - **Use silence strategically.** After something impressive happens, *don't narrate it* — let the viewer sit with it. A 2-second pause after a fast result says "that was fast" better than any words.
 - **Build to peaks.** Start calm and conversational. Accelerate through mechanical steps (form fills, navigation). Slow down and add weight for the "wow" moment. End with a quick, confident close.
 - **Front-load value.** Each sentence should lead with the benefit or result, not the action. "Three seconds flat" before "to generate the whole thing."
+
+#### Pacing Playbook — Specific Timing Guidance
+
+Beyond general rhythm, these specific timing recommendations ensure narration breathes
+properly and dramatic moments land:
+
+| Situation | Recommended Silence | Why |
+|-----------|-------------------|-----|
+| After a rhetorical question | 1.5–2.0s | Let the viewer answer in their head before you continue |
+| Before the hero reveal | 2–3s of pure silence | Build anticipation — the viewer should be leaning in |
+| After the hero payoff line | 1–2s | Let the moment breathe. Don't rush to the next thing. |
+| Between dense narration blocks | ≥1s pause or a silent beat | Prevents cognitive overload — the viewer needs processing time |
+| At scene transitions | ≥1s | Clean mental reset. The viewer orients to the new screen. |
+| After a surprising visual change | 1–1.5s | Let the viewer register what just happened on screen |
+
+**Back-to-back narration cap:** No more than **3 consecutive narrated beats** without
+either a silent beat or a pause of ≥1.0s within a beat. Dense narration without breaks
+makes the viewer tune out — the words become background noise.
+
+**Fill ratio targets by beat type:**
+- **Hook/question beats:** 50–60% fill (leave room for the question to land)
+- **Problem/story beats:** 60–75% fill (vivid storytelling needs words)
+- **Action/walkthrough beats:** 30–50% fill (let the UI speak)
+- **Hero setup/payoff beats:** 40–60% fill (breathing room around the wow)
+- **Silent beats:** 0% fill (intentional — viewer watches)
+
+#### Quantified Claims Must Be Supportable
+
+When narration makes specific claims ("under five minutes," "three seconds," "ten
+tasks"), those claims must be defensible from the actual demo workflow:
+
+- **"Under five minutes"** — Only use if the demo workflow (URL → generated video)
+  actually completes in under five minutes. If generation takes 8 minutes, say
+  "minutes, not hours" instead.
+- **"While you were watching this demo, DemoFly made another one"** — Only use if
+  the generation time is genuinely shorter than the demo video length. If not,
+  soften to "was already working on another one."
+- **Counted items ("ten tasks," "five scenes")** — Must match what's visible on
+  screen during the demo.
+
+**Rule:** If a claim would make a skeptical Hacker News commenter call you out,
+rephrase it. Credibility is worth more than a punchy line.
 
 #### Multi-Beat Narration Flows
 
@@ -868,6 +969,10 @@ Before finalizing any transcript, verify:
 - [ ] **Closing test:** Is the last sentence specific to this product and this demo (not a generic "that's [X]")?
 - [ ] **Flow test:** Does the narration feel like one continuous story, not a list of disconnected observations?
 - [ ] **Hero test:** Does the most impressive feature get noticeably more attention — slower pacing, emotional weight, breathing room?
+- [ ] **Problem vividness test:** Does the problem section make the viewer *feel* frustration, not just understand it? (See "Show, Don't Tell the Problem")
+- [ ] **Magic moment test:** Does every non-hero scene include at least one micro-wow interaction?
+- [ ] **Pacing test:** No more than 3 consecutive narrated beats without a silent beat or ≥1s pause. Questions get 1.5-2s silence after.
+- [ ] **Claims test:** Every quantified claim ("five minutes," "ten tasks") is supportable by the actual workflow.
 
 ### Complete Example
 
