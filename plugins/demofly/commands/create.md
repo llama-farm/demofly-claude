@@ -367,7 +367,7 @@ Tell the user: **"Playwright scripts are ready. Moving to recording."**
 ### Run the test
 
 ```bash
-npx playwright test demofly/<name>/demo.spec.ts --config demofly/<name>/playwright.config.ts 2>&1
+npx playwright test demofly/<name>/demo.spec.ts --config demofly/<name>/playwright.config.ts 2>&1 | tee output.log
 ```
 
 Use a Bash timeout of **600000ms** (10 minutes).
@@ -397,26 +397,13 @@ Apply the sub-agent's fixes to `demo.spec.ts`, then re-run. Repeat up to 3 times
 
 2. **Find the video file**: Playwright writes video to `test-results/` by default. Find the `.webm` file and copy it to `demofly/<name>/recordings/`.
 
-3. **Extract timing data**: Parse the console output for all lines matching `DEMOFLY|`. Build `demofly/<name>/recordings/timing.json`:
+3. **Extract timing data**: Run the extraction script from the `demo-workflow` skill.
+   Read the script at [extract-timing.js](../skills/demo-workflow/extract-timing.js),
+   then execute it:
 
-```json
-{
-  "demo": "<name>",
-  "total_duration_ms": 0,
-  "scenes": [
-    {
-      "id": "scene-1",
-      "title": "<from script>",
-      "start_ms": 0,
-      "end_ms": 0,
-      "markers": [
-        { "action": "click", "target": "new-project-btn", "ms": 1234 },
-        { "action": "type-start", "target": "project-name", "ms": 1500 }
-      ]
-    }
-  ]
-}
-```
+   ```bash
+   node <path-to-extract-timing.js> output.log demofly/<name>/recordings/timing.json
+   ```
 
 4. **Convert to mp4** if ffmpeg is available:
 ```bash

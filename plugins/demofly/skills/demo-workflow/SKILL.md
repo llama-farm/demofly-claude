@@ -369,41 +369,16 @@ frequently produce variations. Here are wrong vs right examples:
 - Scene: `endMs` (not `end_ms`, `finish`, `to`, `end`)
 - Marker: `action`, `target`, `ms` (these three only)
 
-**Extraction script** — this is the ONLY supported way to produce timing.json.
-Do not write timing.json manually:
+**Extraction script** — [extract-timing.js](extract-timing.js) is the ONLY supported way
+to produce timing.json. Do not write timing.json manually. Run it after recording:
 
 ```bash
-node -e "
-const fs = require('fs');
-const log = fs.readFileSync('output.log', 'utf8');
-const lines = log.split('\n')
-  .map(l => l.match(/DEMOFLY\|([^|]+)\|([^|]+)\|([^|]*)\|(\d+)/))
-  .filter(Boolean)
-  .map(m => ({ scene: m[1], action: m[2], target: m[3], ms: parseInt(m[4]) }));
-
-const scenes = [];
-let current = null;
-for (const l of lines) {
-  if (l.action === 'start') {
-    // Use camelCase field names to match CLI's TimingData interface
-    current = { sceneId: l.scene, startMs: l.ms, endMs: 0, markers: [] };
-    scenes.push(current);
-  } else if (l.action === 'end' && current) {
-    current.endMs = l.ms;
-    current = null;
-  } else if (current) {
-    current.markers.push({ action: l.action, target: l.target, ms: l.ms });
-  }
-}
-const result = {
-  // camelCase — must match CLI's TimingData interface exactly
-  totalDuration: scenes.length ? scenes[scenes.length - 1].endMs - scenes[0].startMs : 0,
-  scenes
-};
-fs.writeFileSync('recordings/timing.json', JSON.stringify(result, null, 2));
-console.log('Wrote timing.json:', scenes.length, 'scenes,', result.totalDuration + 'ms total');
-"
+node <path-to-extract-timing.js> output.log demofly/<name>/recordings/timing.json
 ```
+
+The script parses all `DEMOFLY|` lines, groups markers by scene (`start` → `end`),
+and writes a camelCase `TimingData` JSON file. It creates the output directory if needed
+and logs a summary to stderr.
 
 ---
 
@@ -629,7 +604,7 @@ After the recording completes:
 1. Find the video file: `test-results/*/video.webm`
 2. Create the recordings directory: `mkdir -p demofly/<name>/recordings`
 3. Move the video: `mv test-results/*/video.webm demofly/<name>/recordings/video.webm`
-4. Parse console output into timing.json (see Section 2)
+4. Extract timing data with [extract-timing.js](extract-timing.js): `node extract-timing.js output.log demofly/<name>/recordings/timing.json`
 5. Optionally convert to mp4: `ffmpeg -i recordings/video.webm -c:v libx264 -crf 23 recordings/video.mp4`
 
 ---

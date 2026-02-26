@@ -1,11 +1,10 @@
 {
-  "total_duration_ms": 30910,
+  "totalDuration": 30910,
   "scenes": [
     {
-      "id": "scene-1",
-      "title": "Create First Note",
-      "start_ms": 0,
-      "end_ms": 8050,
+      "sceneId": "scene-1",
+      "startMs": 0,
+      "endMs": 8050,
       "markers": [
         { "action": "navigate", "target": "home", "ms": 120 },
         { "action": "click", "target": "note-title", "ms": 1540 },
@@ -19,10 +18,9 @@
       ]
     },
     {
-      "id": "scene-2",
-      "title": "Edit the Note",
-      "start_ms": 9080,
-      "end_ms": 16410,
+      "sceneId": "scene-2",
+      "startMs": 9080,
+      "endMs": 16410,
       "markers": [
         { "action": "click", "target": "edit-btn", "ms": 9420 },
         { "action": "click", "target": "edit-title", "ms": 10180 },
@@ -36,10 +34,9 @@
       ]
     },
     {
-      "id": "scene-3",
-      "title": "Create Second Note & Search",
-      "start_ms": 17440,
-      "end_ms": 24350,
+      "sceneId": "scene-3",
+      "startMs": 17440,
+      "endMs": 24350,
       "markers": [
         { "action": "click", "target": "note-title-2", "ms": 17820 },
         { "action": "type-start", "target": "note-title-2", "ms": 17860 },
@@ -55,10 +52,9 @@
       ]
     },
     {
-      "id": "scene-4",
-      "title": "Delete & Wrap Up",
-      "start_ms": 25380,
-      "end_ms": 30910,
+      "sceneId": "scene-4",
+      "startMs": 25380,
+      "endMs": 30910,
       "markers": [
         { "action": "click", "target": "first-note", "ms": 26210 },
         { "action": "click", "target": "delete-btn", "ms": 27340 },
