@@ -46,7 +46,8 @@ context.md --> proposal.md --> script.md --> demo.spec.ts + playwright.config.ts
 
 | Artifact | Location | Purpose |
 |----------|----------|---------|
-| `context.md` | `demofly/context.md` (shared) | Lightweight product understanding: URL, stack, pages, features, UI quirks. Under 60 lines. Refreshed lazily. |
+| `context.md` | `demofly/context.md` (shared) | Lightweight product understanding with YAML frontmatter for freshness tracking. Under 60 lines of content. Refreshed via structural hash check. |
+| `extract-context-structural.js` | `plugins/demofly/skills/demo-workflow/` | Deterministic script that fingerprints project structure (manifest, configs, route listing) and detects framework/stack/routes/port. Gates context refresh. |
 | `proposal.md` | `demofly/<name>/proposal.md` | Scene outline: concept, scenes with descriptions, demo data, target total and per-scene duration. User approval checkpoint. |
 | `script.md` | `demofly/<name>/script.md` | Master document: per-scene narration text, interaction sequence, sync notes mapping narration to marker IDs. |
 | `demo.spec.ts` | `demofly/<name>/demo.spec.ts` | Executable Playwright test with timing markers, human-like interactions, fake cursor. |
@@ -56,40 +57,85 @@ context.md --> proposal.md --> script.md --> demo.spec.ts + playwright.config.ts
 
 ### context.md Format
 
-This file is shared across all demos for the same product. Keep it under 60 lines.
-Refresh it when the product changes significantly, not on every demo run.
+This file is shared across all demos for the same product. Keep it under 60 lines
+of content (excluding frontmatter). Refresh is gated by structural hash — if the
+hash matches, the context is fresh and no Playwright or LLM work is needed.
+
+#### YAML Frontmatter
+
+Every context.md includes YAML frontmatter tracking freshness metadata:
+
+```yaml
+---
+structural_hash: "a1b2c3d4..."   # SHA-256 of manifest + configs + route listing
+structural_at: "2026-02-27T10:30:00Z"  # when structural layer was last built
+url: "http://127.0.0.1:4567"    # detected dev server URL
+ui_at: "2026-02-27T10:31:00Z"   # when UI layer was last refreshed
+editorial_at: "2026-02-27T10:32:00Z"  # when editorial layer was last synthesized
+---
+```
+
+Downstream consumers (create.md Steps 4/5/6, demo-engineer.md) read context.md for
+its content sections — they ignore the frontmatter.
+
+#### Three Conceptual Layers
+
+The content sections map to three conceptual layers, each with a different
+production method and refresh trigger:
+
+| Layer | Sections it owns | How produced | Refresh trigger |
+|-------|-----------------|-------------|-----------------|
+| **Structural** | Name, URL, Stack, Pages/Routes (paths only) | `extract-context-structural.js` (deterministic) | Hash of key input files changes |
+| **UI** | UI Quirks / Selector Notes, route descriptions | Playwright UI Explorer sub-agent | Structural layer changed (new routes, new UI deps) |
+| **Editorial** | App Overview, Key Features, Demo Data | LLM synthesis from codebase + UI exploration | Structural or UI layer changed |
+
+#### Refresh Flow
+
+```
+context.md exists?
+├─ No → full build (script + Playwright + LLM synthesis)
+└─ Yes → run extract-context-structural.js --hash-only (~50ms)
+          ├─ hash matches frontmatter → skip (optionally verify URL liveness)
+          └─ hash differs → targeted refresh based on what changed
+```
+
+#### Content Template
 
 ```markdown
+---
+structural_hash: "<SHA-256 hex>"
+structural_at: "<ISO 8601>"
+url: "<detected URL>"
+ui_at: "<ISO 8601>"
+editorial_at: "<ISO 8601>"
+---
 # Product Context
 
-**Name:** [Product name]
-**URL:** [Running instance URL, e.g. http://127.0.0.1:3000]
+**Name:** [Product name — from structural script]
+**URL:** [Running instance URL — from structural script]
 **Repository:** [Path to repo root]
 
 ## Stack
-- Framework: [e.g. Next.js 14, Remix, Rails 7]
-- UI Library: [e.g. Tailwind + shadcn/ui, MUI, Ant Design]
-- State Management: [e.g. Zustand, Redux, React Query]
-- Database: [e.g. PostgreSQL via Prisma, Supabase]
-- Auth: [e.g. NextAuth, Clerk, custom JWT]
+- Framework: [e.g. Next.js 14, Remix, Rails 7 — from structural script]
+- UI Library: [e.g. Tailwind + shadcn/ui, MUI, Ant Design — from structural script]
+- State Management: [e.g. Zustand, Redux, React Query — from structural script]
+- Database: [e.g. PostgreSQL via Prisma, Supabase — from structural script]
+- Auth: [e.g. NextAuth, Clerk, custom JWT — from structural script]
 
 ## Pages / Routes
-- `/` — Dashboard, shows [summary of what's visible]
+- `/` — Dashboard, shows [summary] (paths from script, descriptions from UI Explorer)
 - `/projects` — Project list with search and filters
-- `/projects/:id` — Project detail with tabs for [...]
 - [... list all significant routes]
 
 ## Key Features
-- [Feature 1: brief description]
-- [Feature 2: brief description]
+- [Feature 1: brief description — from Codebase Explorer + UI Explorer]
 
-## UI Quirks
-- [Anything that affects Playwright: custom dropdowns, portals, iframes, etc.]
-- [Component library specifics: data-testid patterns, role attributes]
-- [Loading states, skeleton screens, animations to wait for]
+## UI Quirks / Selector Notes
+- [Component library specifics — from UI Explorer]
+- [Loading states, animations to wait for]
 
 ## Demo Data
-- [Pre-seeded accounts, sample records, API keys needed]
+- [Pre-seeded accounts, sample records — from Codebase Explorer]
 ```
 
 ### proposal.md Format
