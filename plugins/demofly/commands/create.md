@@ -105,25 +105,39 @@ Tell the user what phase you are starting from and why.
 
 ## Step 3: Exploration
 
-**Goal**: Build `demofly/context.md` -- a concise (under 60 lines) product understanding document.
+**Goal**: Build or refresh `demofly/context.md` -- a concise (under 60 lines) product understanding document with YAML frontmatter tracking freshness metadata.
 
-### If `demofly/context.md` does NOT exist:
+This step uses a **hash-check-first** flow to avoid unnecessary Playwright launches and LLM calls. The structural extraction script (`extract-context-structural.js` from the `demo-workflow` skill) fingerprints the project's manifest, config files, and route directory listing to detect changes cheaply.
 
-Launch **two parallel sub-agents** using the Task tool:
+Determine which path to follow:
+
+### Path A: No `demofly/context.md` exists (first run)
+
+**1. Run structural extraction.**
+
+Read the script at [extract-context-structural.js](../skills/demo-workflow/extract-context-structural.js), then execute:
+
+```bash
+node <path-to-extract-context-structural.js> <project-root>
+```
+
+This returns JSON with `name`, `url`, `stack`, `routes`, and `inputHash`.
+
+**2. Launch two parallel sub-agents:**
 
 **Sub-agent 1 -- Codebase Explorer** (type: `Explore`):
 > Analyze this codebase for demo generation. Find and report:
 > - What the app does (from README, package.json, or equivalent)
-> - Tech stack (framework, UI library, key dependencies)
-> - Routes/pages and what each one does
 > - Key interactive features worth demoing
 > - UI framework specifics that affect Playwright selectors (e.g., Radix, MUI, Ant Design, shadcn/ui, custom components)
 > - Any test data, seed data, or fixture patterns
 >
+> NOTE: Tech stack and routes have already been detected deterministically. Focus on features, UI quirks, and demo data.
+>
 > Be concise. Return a structured summary, not raw file contents.
 
 **Sub-agent 2 -- UI Explorer** (type: `general-purpose`):
-> Before starting, ask the user: **"What URL is the app running at?"** (e.g., `http://localhost:3000`).
+> The app should be running at the URL detected by the structural script (shown above). If the URL is not reachable, ask the user: **"What URL is the app running at?"**
 >
 > Then use Playwright MCP to:
 > 1. Navigate to the app URL
@@ -136,33 +150,81 @@ Launch **two parallel sub-agents** using the Task tool:
 >
 > Return a structured summary of what you found, organized by page/route.
 
-After both sub-agents return, **synthesize** their findings into `demofly/context.md` with these sections:
+**3. Synthesize** the structural script output + both sub-agent findings into `demofly/context.md`.
+
+Use the structural script output for the Name, URL, Stack, and Pages/Routes sections (these are deterministic facts, not LLM interpretation). Use the sub-agents for App Overview, Key Features, UI Quirks, Selector Notes, and Demo Data.
+
+Write the file with YAML frontmatter:
 
 ```markdown
+---
+structural_hash: "<inputHash from script>"
+structural_at: "<current ISO 8601 timestamp>"
+url: "<detected URL>"
+ui_at: "<current ISO 8601 timestamp>"
+editorial_at: "<current ISO 8601 timestamp>"
+---
 # Product Context
 
-## App Overview
-<!-- What it does, who it's for -->
+**Name:** [from script]
+**URL:** [from script]
+**Repository:** [project root path]
 
-## Tech Stack
-<!-- Framework, UI library, key deps -->
+## Stack
+[from script: framework, bundler, UI library, state, db, auth]
 
-## URL
-<!-- Where the app runs -->
+## Pages / Routes
+[paths from script + descriptions from UI Explorer]
 
-## Pages & Routes
-<!-- Each page, what it does, key elements -->
+## Key Features
+[from Codebase Explorer + UI Explorer]
 
-## Notable Features
-<!-- Features worth demoing, interactive highlights -->
+## UI Quirks / Selector Notes
+[from UI Explorer: component library specifics, loading states, etc.]
 
-## Selector Notes
-<!-- UI framework specifics that affect Playwright selectors -->
+## Demo Data
+[from Codebase Explorer: seed data, test accounts, fixtures]
 ```
 
-### If `demofly/context.md` ALREADY exists:
+### Path B: `demofly/context.md` exists, structural hash matches
 
-Read it. Do a quick sanity check -- navigate to the app URL from context.md via Playwright MCP and take a snapshot. If the app has clearly changed (different pages, new features, broken URL), update context.md. Otherwise, move on.
+**1. Run hash-only check** (~50ms):
+
+```bash
+node <path-to-extract-context-structural.js> <project-root> --hash-only
+```
+
+**2. Compare** the output hash to the `structural_hash` in context.md's YAML frontmatter.
+
+**3. If they match** -- the context is fresh. Optionally verify the URL is reachable (navigate via Playwright MCP and check for a response). Then skip to Step 4.
+
+Tell the user: **"Product context is fresh (structural hash matches). Moving to proposal."**
+
+### Path C: `demofly/context.md` exists, structural hash differs
+
+**1. Run diff check** to determine what changed:
+
+```bash
+node <path-to-extract-context-structural.js> <project-root> --diff <previous-hash>
+```
+
+**2. Targeted refresh based on what changed:**
+
+- **`routes_changed` or `deps_changed`**: Re-run the UI Explorer sub-agent for affected routes, then re-synthesize the editorial sections (App Overview, Key Features, Demo Data). Update the structural sections (Stack, Pages/Routes) from a fresh script run.
+
+- **`config_changed`**: Re-run the structural script to update Stack and URL. If the port changed, re-run UI Explorer. Otherwise, patch structural sections only.
+
+- **`metadata_changed`** (name or minor field changes): Patch the Name/URL fields in-place from a fresh script run. No UI Explorer or LLM synthesis needed.
+
+- **`structural_changed`** (generic / first time diffing): Treat as a full rebuild -- re-run both sub-agents and re-synthesize everything.
+
+**3. Update frontmatter** with the new `structural_hash`, `structural_at`, and any refreshed layer timestamps (`ui_at`, `editorial_at`).
+
+**4. Proceed to Step 4.**
+
+### Legacy migration
+
+If `demofly/context.md` exists but has **no YAML frontmatter** (no `---` block at the top), treat it as stale and follow Path A (full rebuild). The new file will include frontmatter.
 
 Tell the user: **"Product context is ready. Moving to proposal."**
 

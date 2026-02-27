@@ -82,7 +82,15 @@ Reference the `demo-workflow` skill for exact artifact formats and templates.
 
 ### Phase 1: Explore
 
-If `demofly/context.md` does not exist or is stale, run parallel exploration (see above). If it already exists and covers the relevant area, skip this phase.
+Use the **hash-check-first** flow to determine if `demofly/context.md` needs work:
+
+1. If `demofly/context.md` **does not exist**, run the structural extraction script (`extract-context-structural.js` from the `demo-workflow` skill), then launch parallel exploration sub-agents to build the full context. Write the file with YAML frontmatter including the structural hash and layer timestamps.
+
+2. If `demofly/context.md` **exists but has no YAML frontmatter** (legacy format), treat it as stale — run a full rebuild (same as case 1).
+
+3. If `demofly/context.md` **exists with frontmatter**, run `extract-context-structural.js --hash-only` (~50ms) and compare to the `structural_hash` in frontmatter:
+   - **Hash matches** → context is fresh. Optionally verify the URL is reachable, then skip to Phase 2.
+   - **Hash differs** → run `--diff <previous-hash>` to determine what changed. Perform a targeted refresh: re-run UI Explorer only if routes or deps changed, re-synthesize editorial sections only if structural or UI layers changed, or patch metadata in-place for minor changes. Update frontmatter with new hash and timestamps.
 
 ### Phase 2: Propose
 

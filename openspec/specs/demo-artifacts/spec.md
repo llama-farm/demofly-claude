@@ -18,19 +18,61 @@ All demo artifacts SHALL be written to a `demofly/` directory in the user's proj
 - **WHEN** product exploration completes
 - **THEN** `demofly/context.md` exists at the demofly root, not inside a demo subdirectory
 
-### Requirement: context.md captures product understanding
+### Requirement: context.md captures product understanding with freshness tracking
 
-The `demofly/context.md` file SHALL contain a lightweight summary of the product: app URL, tech stack, key pages/routes, notable features, and any UI framework specifics that affect Playwright selector strategy (e.g., Radix dropdowns, custom date pickers). It SHALL be concise (under 60 lines).
+The `demofly/context.md` file SHALL contain YAML frontmatter with freshness metadata (`structural_hash`, `structural_at`, `url`, `ui_at`, `editorial_at`) followed by a lightweight summary of the product: app URL, tech stack, key pages/routes, notable features, and any UI framework specifics that affect Playwright selector strategy. Content SHALL be concise (under 60 lines excluding frontmatter).
+
+The structural hash SHALL be a SHA-256 digest computed from the project's package manifest, framework config files, and route directory listing (sorted file paths, not file contents). This hash gates all context refresh decisions.
 
 #### Scenario: Context created from parallel exploration
 
 - **WHEN** both the codebase explorer and UI explorer sub-agents return results
-- **THEN** the agent synthesizes their findings into a single context.md
+- **THEN** the agent synthesizes their findings into a single context.md with YAML frontmatter containing the structural hash and layer timestamps
 
 #### Scenario: Context reused across demos
 
 - **WHEN** the user creates a second demo and context.md already exists
-- **THEN** the agent reads the existing context.md and checks it against the running app before proceeding
+- **THEN** the agent runs `extract-context-structural.js --hash-only` and compares to the `structural_hash` in frontmatter to determine freshness
+
+#### Scenario: Hash-based staleness detection skips exploration
+
+- **WHEN** context.md exists and the structural hash matches the current project state
+- **THEN** the agent skips exploration entirely (no Playwright launch, no LLM call) and proceeds to proposal generation
+
+#### Scenario: Targeted refresh when routes change
+
+- **WHEN** context.md exists but the structural hash differs due to new route files
+- **THEN** the agent re-runs the UI Explorer sub-agent for affected routes and re-synthesizes editorial sections, but does not rebuild from scratch
+
+#### Scenario: Targeted refresh when dependencies change
+
+- **WHEN** context.md exists but the structural hash differs due to dependency changes
+- **THEN** the agent re-runs the UI Explorer (new component library may affect selectors) and re-synthesizes editorial sections
+
+#### Scenario: Metadata-only patch
+
+- **WHEN** context.md exists and only project name or port changed (no route or dep changes)
+- **THEN** the agent patches the Name/URL fields in-place without running sub-agents
+
+#### Scenario: Legacy context.md migration
+
+- **WHEN** context.md exists but has no YAML frontmatter (created before freshness tracking)
+- **THEN** the agent treats the context as stale and performs a full rebuild, writing the new file with frontmatter
+
+#### Scenario: Hash stability on unchanged project
+
+- **WHEN** the structural extraction script runs twice with no project changes between runs
+- **THEN** both runs produce the same hash value
+
+#### Scenario: Hash changes on new route file
+
+- **WHEN** a new file is added to a route directory
+- **THEN** the structural hash changes (route directory listing differs)
+
+#### Scenario: Hash unchanged on existing file edit
+
+- **WHEN** an existing component file is edited (no new files, no dependency changes)
+- **THEN** the structural hash does NOT change (file contents are not hashed, only file paths in route dirs)
 
 ### Requirement: proposal.md defines the demo narrative
 
