@@ -1293,9 +1293,84 @@ test('demo recording', async ({ page }) => {
 - **`createMarker()`** — Factory that captures `Date.now()` and returns a bound `mark(scene, action, target?)` function. Each spec gets its own `t0`.
 - **`moveTo(page, element, prevBox?)`** — Calculates pixel distance from previous bounding box, waits proportionally (80ms base + 1.8ms/px), then updates the fake cursor position. Returns the new bounding box.
 - **`injectCursor(page)`** — Injects the `#demofly-cursor` div with fixed positioning, transitions, and high z-index. **Must be re-called after each full-page navigation** (`page.goto()`) because the DOM resets.
+- **`createTempDir(demoName)`** — Creates an OS-agnostic transient temp directory under `os.tmpdir()`. Returns the absolute path. See Section 9.
+- **`createSessionTmpDir(demoDir)`** — Creates (or ensures) a `.tmp/` subdirectory inside the demo folder for session-scoped intermediate artifacts. See Section 9.
 
 ### Customization
 
 The template is a copy, not a shared import. If a specific demo needs different timing
 constants or cursor styling, modify the local copy. The template provides consistent
 defaults across demos.
+
+---
+
+## 9. Artifact Directory Strategy
+
+Demo artifacts must **never pollute the user's repository root**. All files generated
+during the demo lifecycle go into one of three locations, based on their lifecycle:
+
+### Three-Tier Directory Strategy
+
+| Tier | Location | Contents | Lifecycle |
+|------|----------|----------|-----------|
+| **Transient** | OS temp dir (`os.tmpdir()`) | Exploration screenshots, debug captures, error screenshots, intermediate processing files | Disposable — OS cleans up on reboot |
+| **Session** | `demofly/<name>/.tmp/` | Draft scripts, planning screenshots, debug logs, intermediate versions | Persists within a session, gitignored |
+| **Final** | `demofly/<name>/` | proposal.md, script.md, demo.spec.ts, recordings/, audio/, transcript.md | Permanent pipeline artifacts |
+
+### OS-Agnostic Temp Directories
+
+**Never hardcode `/tmp`.** It does not exist on Windows.
+
+Use the helpers from `plugins/demofly/templates/helpers.ts`:
+
+```typescript
+import { createTempDir, createSessionTmpDir } from './helpers';
+
+// Transient: OS temp dir (auto-cleaned, no repo footprint)
+const tmpDir = await createTempDir('my-demo');
+// → e.g. /tmp/demofly-my-demo-abc123/ (Linux/macOS)
+// → e.g. C:\Users\user\AppData\Local\Temp\demofly-my-demo-abc123 (Windows)
+
+// Session: demo-specific .tmp dir (gitignored, persists in session)
+const sessionDir = await createSessionTmpDir('demofly/my-demo');
+// → demofly/my-demo/.tmp/
+```
+
+Or use the standalone script (no TypeScript compilation needed):
+
+```bash
+# Transient temp dir
+TMPDIR=$(node scripts/create-temp-dir.js my-demo --type transient)
+
+# Session temp dir
+SESSDIR=$(node scripts/create-temp-dir.js my-demo --type session)
+```
+
+Both approaches use `os.tmpdir()` (Node.js built-in) under the hood, which resolves
+to the correct platform-specific path on Linux, macOS, and Windows.
+
+### Where Each Artifact Type Goes
+
+| Artifact | Tier | Location |
+|----------|------|----------|
+| Exploration screenshots (UI discovery) | Transient | `os.tmpdir()/demofly-<name>-*/` |
+| Debug captures / error screenshots | Transient | `os.tmpdir()/demofly-<name>-*/` |
+| Intermediate processing files | Transient | `os.tmpdir()/demofly-<name>-*/` |
+| Draft scripts, intermediate versions | Session | `demofly/<name>/.tmp/` |
+| Planning screenshots for script design | Session | `demofly/<name>/.tmp/` |
+| Recording session logs | Session | `demofly/<name>/.tmp/` |
+| proposal.md, script.md, demo.spec.ts | Final | `demofly/<name>/` |
+| timing.json, video.webm, final.mp4 | Final | `demofly/<name>/recordings/` |
+| TTS audio files | Final | `demofly/<name>/audio/` |
+| transcript.md | Final | `demofly/<name>/` |
+
+### .gitignore
+
+Add this pattern to the project's `.gitignore` (or recommend it to the user):
+
+```
+# DemoFly session artifacts
+demofly/**/.tmp/
+```
+
+The transient tier needs no gitignore entry — it lives outside the repo entirely.

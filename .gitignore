@@ -6,3 +6,6 @@ test-results
 playwright-report
 .DS_Store
 *.log
+
+# DemoFly session artifacts (intermediate/debug files)
+demofly/**/.tmp/

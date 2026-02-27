@@ -1,4 +1,7 @@
 import { Page, Locator, BoundingBox } from '@playwright/test';
+import { tmpdir } from 'node:os';
+import { mkdtemp, mkdir } from 'node:fs/promises';
+import { join } from 'node:path';
 
 export function createMarker(): (scene: string, action: string, target?: string) => void {
   const t0 = Date.now();
@@ -35,6 +38,39 @@ export async function moveTo(
   );
 
   return box;
+}
+
+/**
+ * Create an OS-agnostic temporary directory for transient demo artifacts
+ * (exploration screenshots, debug captures, intermediate files).
+ *
+ * Uses `os.tmpdir()` for cross-platform compatibility:
+ *   - Linux/macOS: /tmp or $TMPDIR
+ *   - Windows: %TEMP% (e.g. C:\Users\<user>\AppData\Local\Temp)
+ *
+ * The directory is namespaced by demo name with a unique suffix to avoid
+ * collisions between concurrent runs.
+ *
+ * @param demoName - The demo slug (e.g. "product-tour")
+ * @returns The absolute path to the created temp directory
+ */
+export async function createTempDir(demoName: string): Promise<string> {
+  const prefix = join(tmpdir(), `demofly-${demoName}-`);
+  return mkdtemp(prefix);
+}
+
+/**
+ * Create (or ensure existence of) a session-local .tmp directory for
+ * demo-specific intermediate artifacts (draft scripts, planning screenshots,
+ * session logs). These persist across tool invocations but are gitignored.
+ *
+ * @param demoDir - Path to the demo directory (e.g. "demofly/product-tour")
+ * @returns The absolute path to the .tmp subdirectory
+ */
+export async function createSessionTmpDir(demoDir: string): Promise<string> {
+  const dir = join(demoDir, '.tmp');
+  await mkdir(dir, { recursive: true });
+  return dir;
 }
 
 export async function injectCursor(page: Page): Promise<void> {

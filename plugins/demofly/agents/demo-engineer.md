@@ -50,6 +50,18 @@ When Playwright tests fail, delegate to a `general-purpose` sub-agent. Pass it:
 
 Apply its recommended fixes, then re-run. Repeat until the recording succeeds or you've exhausted reasonable attempts (3 rounds max), at which point surface the issue to the user.
 
+## Artifact Directory Strategy
+
+**Never pollute the user's repo root with internal artifacts.** All generated files go into one of three tiers:
+
+1. **Transient** (OS temp dir) — Exploration screenshots, debug captures, error screenshots. Created via `node scripts/create-temp-dir.js <name> --type transient`. OS handles cleanup.
+2. **Session** (`demofly/<name>/.tmp/`) — Draft scripts, planning screenshots, debug logs. Created via `node scripts/create-temp-dir.js <name> --type session`. Gitignored.
+3. **Final** (`demofly/<name>/`) — Pipeline artifacts that matter (see table below).
+
+At the start of every demo session, create both a transient and session temp dir. Direct all non-final artifacts to the appropriate tier. See the `demo-workflow` skill Section 9 for full details.
+
+Ensure `demofly/**/.tmp/` is in `.gitignore`.
+
 ## Artifact Pipeline
 
 Each demo lives in its own directory under `demofly/`. The pipeline produces these artifacts in order:
