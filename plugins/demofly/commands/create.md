@@ -271,6 +271,7 @@ export default defineConfig({
     viewport: { width: 1280, height: 800 },
     video: 'on',
     launchOptions: {
+      headless: true, // MUST always be headless — never use headed mode
       slowMo: 50,
     },
   },

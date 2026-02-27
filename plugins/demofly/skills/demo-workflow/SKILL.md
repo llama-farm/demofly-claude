@@ -565,6 +565,7 @@ export default defineConfig({
     viewport: { width: 1280, height: 800 },
     video: 'on',
     launchOptions: {
+      headless: true, // MUST always be headless — never use headed mode
       slowMo: 50, // Small global slowdown for smoother recording
     },
   },
@@ -581,6 +582,12 @@ export default defineConfig({
   products if needed (e.g. 1920x1080 for data-heavy dashboards).
 - **`video: 'on'`** — Records video for every test run. Videos are saved to
   `test-results/` by default. Move the `.webm` file to `recordings/` after the run.
+- **`headless: true`** — **All browser launches MUST be headless.** Never set
+  `headless: false` — not for exploration, not for recording, not for debugging.
+  Playwright's `recordVideo` works perfectly in headless mode. Headed mode steals
+  focus, wastes GPU resources, and breaks on headless servers/CI. If you need to
+  debug a selector, use `page.screenshot()` or Playwright's trace viewer — not
+  a headed browser.
 - **`slowMo: 50`** — Adds 50ms between every Playwright action. This stacks with
   the explicit pauses in the test code. Keeps the overall pace feeling unhurried.
 - **`baseURL`** — The agent must update this to match the URL in `context.md`.
