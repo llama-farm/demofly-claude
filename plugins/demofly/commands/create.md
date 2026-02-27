@@ -9,7 +9,31 @@ The user invoked `/demofly:create $ARGUMENTS`.
 
 ---
 
-## Step 0: Check Playwright MCP Availability
+## Step 0a: Set Up Artifact Directories
+
+Before starting any work, set up the temp directory strategy so artifacts don't pollute the repo root:
+
+1. **Create a transient temp dir** for exploration screenshots and debug captures:
+   ```bash
+   DEMOFLY_TMPDIR=$(node scripts/create-temp-dir.js <name> --type transient)
+   ```
+   Use this for all throwaway files (UI exploration screenshots, error captures, intermediate processing).
+
+2. **Create a session .tmp dir** for demo-specific intermediate artifacts:
+   ```bash
+   DEMOFLY_SESSDIR=$(node scripts/create-temp-dir.js <name> --type session)
+   ```
+   Use this for draft scripts, planning screenshots, and debug logs that should persist within the session but not be committed.
+
+3. **Ensure `.gitignore` includes `demofly/**/.tmp/`** — check and add if missing.
+
+All screenshots taken during exploration (Step 3) and debugging (Step 7) MUST go into `$DEMOFLY_TMPDIR`, NOT the repo root or the demo directory. Only final pipeline artifacts (proposal.md, script.md, demo.spec.ts, recordings/, audio/, transcript.md) belong in `demofly/<name>/`.
+
+Refer to the `demo-workflow` skill Section 9 for the complete artifact directory strategy.
+
+---
+
+## Step 0b: Check Playwright MCP Availability
 
 Before anything else, verify that Playwright MCP tools are working by **actually calling** `mcp__plugin_playwright_playwright__browser_snapshot`.
 
@@ -107,6 +131,8 @@ Launch **two parallel sub-agents** using the Task tool:
 > 3. Identify interactive elements (forms, buttons, dropdowns, modals)
 > 4. Note any loading states, animations, or async behaviors
 > 5. Check responsive layout at 1280x800 viewport
+>
+> **Save all screenshots to `$DEMOFLY_TMPDIR`** (the transient temp directory), NOT the repo root.
 >
 > Return a structured summary of what you found, organized by page/route.
 
