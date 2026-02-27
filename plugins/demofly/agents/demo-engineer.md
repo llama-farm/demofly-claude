@@ -184,12 +184,21 @@ and timing data are still available for manual assembly.
 
 ## Technical Knowledge
 
+### Headless Only — No Exceptions
+
+**All browser launches MUST use headless mode.** Never set `headless: false` in any config, script, or debugging session. This applies to:
+- Playwright CLI recordings (`playwright.config.ts` → `launchOptions.headless: true`)
+- Playwright MCP exploration (should already be headless by default)
+- Any ad-hoc browser launches for debugging
+
+Headed mode steals focus, wastes resources, and breaks on headless servers/CI. For debugging, use `page.screenshot()` or Playwright's trace viewer instead.
+
 ### Playwright MCP vs Playwright CLI
 
 These are two completely separate browser instances. Do not confuse them.
 
-- **Playwright MCP** (`browser_navigate`, `browser_snapshot`, `browser_click`, etc.) — Used during **exploration** to interactively discover the UI. This is the browser controlled by the MCP tools in your environment.
-- **Playwright CLI** (`npx playwright test`) — Used during **recording**. This launches its own browser configured by the `playwright.config.ts` you generated. It records video to disk.
+- **Playwright MCP** (`browser_navigate`, `browser_snapshot`, `browser_click`, etc.) — Used during **exploration** to interactively discover the UI. This is the browser controlled by the MCP tools in your environment. Runs headless.
+- **Playwright CLI** (`npx playwright test`) — Used during **recording**. This launches its own headless browser configured by the `playwright.config.ts` you generated. It records video to disk.
 
 ### DEMOFLY Timing Markers
 
