@@ -811,7 +811,7 @@ Per-persona constraints for narration generation and Playwright timing.
 
 ### Hype Marketing
 
-- **Sentence structure:** Fragments. Punchy. Maximum 8 words per sentence. No compound.
+- **Sentence structure:** Fragments. Punchy.
 - **Vocabulary:** Superlatives OK ("instantly," "effortlessly"). "You" pronoun. Action verbs.
 - **TTS tags:** `[excited]` baseline, `[energetic]` for hero, `[impressed]` for reveals. Fast pacing.
 - **Silence ratio:** 20% — high energy, minimal silence. Quick cuts between narration.
