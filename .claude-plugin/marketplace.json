@@ -1,0 +1,27 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "demofly-marketplace",
+  "version": "0.1.3",
+  "description": "Automated demo video generation plugins for Claude Code",
+  "owner": {
+    "name": "llama-farm",
+    "url": "https://github.com/llama-farm"
+  },
+  "plugins": [
+    {
+      "name": "demofly",
+      "version": "0.2.0",
+      "description": "Generate polished demo videos from your web app using Playwright with human-like interactions, timing markers for audio sync, and optional narration",
+      "source": "./plugins/demofly",
+      "category": "development",
+      "tags": [
+        "demo",
+        "video",
+        "playwright",
+        "recording",
+        "automation",
+        "presentation"
+      ]
+    }
+  ]
+}
