@@ -1385,7 +1385,7 @@ ElevenLabs and OpenAI voices are available via `--provider`. Use `demofly voices
 Requires Node 22+ (for local Kokoro TTS):
 
 ```bash
-source ~/.nvm/nvm.sh && nvm use 22 > /dev/null 2>&1 && demofly generate <name>
+demofly generate <name>
 ```
 
 #### What it reads and produces

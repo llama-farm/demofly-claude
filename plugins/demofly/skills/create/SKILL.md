@@ -164,7 +164,7 @@ See `reference.md` §2 for the narration.md format template and §§7, 8, 11 for
 Run TTS on the narration script to produce per-scene `.wav` files:
 
 ```bash
-source ~/.nvm/nvm.sh && nvm use 22 > /dev/null 2>&1 && demofly generate <name> --audio
+demofly generate <name> --audio
 ```
 
 The `--audio` flag reads `narration.md` (not the old `transcript.md`) and produces per-scene audio in `audio/`.
@@ -326,6 +326,20 @@ Decisions with confidence < 0.7 are logged but skipped.
 Report success and provide the path to `recordings/final.mp4`.
 
 If the `demofly` CLI is not available or fails, report the error and note that the raw recording and timing data are available for manual assembly.
+
+## Step 11: Push to Demofly Cloud
+
+**Goal**: Upload the finished demo and give the user a shareable URL.
+
+After successful assembly, push the demo to the cloud:
+
+```bash
+demofly push <name>
+```
+
+- If the push succeeds, display the returned URL prominently so the user can visit and share it.
+- If the user is not authenticated, the CLI will prompt them. Offer to run: `demofly auth login` for them
+- If the push fails for other reasons, report the error but note that the local `recordings/final.mp4` is still available.
 
 ---
 
