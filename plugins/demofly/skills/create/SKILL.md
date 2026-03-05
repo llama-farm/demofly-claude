@@ -1,6 +1,6 @@
 ---
 description: "Create or continue a demo video for this web app. Triggers when the user wants to create demos, record product walkthroughs, generate demo videos, build product tours, or work with demofly artifacts. Example phrases: create a demo of my app, record a product walkthrough, generate a demo video, build a product tour, make a demo for the landing page flow, record the onboarding experience, I need a demo, walk through the checkout process on video, demofly this feature."
-allowed-tools: ["Bash", "Read", "Write", "Edit", "Glob", "Grep", "Task", "mcp__plugin_playwright_playwright__browser_snapshot", "mcp__plugin_playwright_playwright__browser_navigate", "mcp__plugin_playwright_playwright__browser_click", "mcp__plugin_playwright_playwright__browser_type", "mcp__plugin_playwright_playwright__browser_take_screenshot", "mcp__plugin_playwright_playwright__browser_press_key", "mcp__plugin_playwright_playwright__browser_hover", "mcp__plugin_playwright_playwright__browser_select_option", "mcp__plugin_playwright_playwright__browser_evaluate", "mcp__plugin_playwright_playwright__browser_console_messages", "mcp__plugin_playwright_playwright__browser_network_requests", "mcp__plugin_playwright_playwright__browser_wait_for", "mcp__plugin_playwright_playwright__browser_fill_form", "mcp__plugin_playwright_playwright__browser_tabs", "mcp__plugin_playwright_playwright__browser_navigate_back", "mcp__plugin_playwright_playwright__browser_drag", "mcp__plugin_playwright_playwright__browser_resize", "mcp__plugin_playwright_playwright__browser_close", "mcp__plugin_playwright_playwright__browser_run_code", "mcp__plugin_playwright_playwright__browser_file_upload", "mcp__plugin_playwright_playwright__browser_handle_dialog", "mcp__plugin_playwright_playwright__browser_install"]
+allowed-tools: ["Bash", "Read", "Write", "Edit", "Glob", "Grep", "Task", "mcp__plugin_playwright_playwright__browser_snapshot", "mcp__plugin_playwright_playwright__browser_navigate", "mcp__plugin_playwright_playwright__browser_click", "mcp__plugin_playwright_playwright__browser_type", "mcp__plugin_playwright_playwright__browser_take_screenshot", "mcp__plugin_playwright_playwright__browser_press_key", "mcp__plugin_playwright_playwright__browser_hover", "mcp__plugin_playwright_playwright__browser_select_option", "mcp__plugin_playwright_playwright__browser_evaluate", "mcp__plugin_playwright_playwright__browser_console_messages", "mcp__plugin_playwright_playwright__browser_network_requests", "mcp__plugin_playwright_playwright__browser_wait_for", "mcp__plugin_playwright_playwright__browser_fill_form", "mcp__plugin_playwright_playwright__browser_tabs", "mcp__plugin_playwright_playwright__browser_navigate_back", "mcp__plugin_playwright_playwright__browser_drag", "mcp__plugin_playwright_playwright__browser_resize", "mcp__plugin_playwright_playwright__browser_close", "mcp__plugin_playwright_playwright__browser_run_code", "mcp__plugin_playwright_playwright__browser_file_upload", "mcp__plugin_playwright_playwright__browser_handle_dialog", "mcp__plugin_playwright_playwright__browser_install", "mcp__demofly-playwright__browser_snapshot", "mcp__demofly-playwright__browser_navigate", "mcp__demofly-playwright__browser_click", "mcp__demofly-playwright__browser_type", "mcp__demofly-playwright__browser_take_screenshot", "mcp__demofly-playwright__browser_press_key", "mcp__demofly-playwright__browser_hover", "mcp__demofly-playwright__browser_select_option", "mcp__demofly-playwright__browser_evaluate", "mcp__demofly-playwright__browser_console_messages", "mcp__demofly-playwright__browser_network_requests", "mcp__demofly-playwright__browser_wait_for", "mcp__demofly-playwright__browser_fill_form", "mcp__demofly-playwright__browser_tabs", "mcp__demofly-playwright__browser_navigate_back", "mcp__demofly-playwright__browser_drag", "mcp__demofly-playwright__browser_resize", "mcp__demofly-playwright__browser_close", "mcp__demofly-playwright__browser_run_code", "mcp__demofly-playwright__browser_file_upload", "mcp__demofly-playwright__browser_handle_dialog", "mcp__demofly-playwright__browser_install"]
 ---
 
 ## 1. Identity & Mission
@@ -25,7 +25,7 @@ Before scripting, determine the **Style**. If unspecified, default to **Polished
 
 | Persona | Vibe | Sentence Structure | Vocabulary | Silence Ratio | Cursor Speed | Lead-in |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Polished Keynote** | Visionary, smooth, result-focused | Short declarative. Fragments for emphasis. | No jargon. "You/your." | 35% | Slow/smooth (40 steps) | 800ms |
+| **Polished Keynote** | Visionary, story-driven, desire-building | Flowing narrative. Compound sentences that connect pain → solution → transformation. No fragments or staccato. | Evocative, zero jargon. "You/your." Paint the why. | 35% | Slow/smooth (40 steps) | 800ms |
 | **Engineering Standup** | Authentic, "we-built-this," casual | Technical OK. Compound sentences. | Jargon welcome. "We/our." | 25% | Snappy/fast (15 steps) | 200ms |
 | **Hype Marketing** | High energy, punchy, fast-paced | Fragments. Punchy. No compound. | Superlatives OK. "You." | 20% | Dynamic/aggressive (10 steps) | 0ms |
 
@@ -56,13 +56,17 @@ See `reference.md` §6 for detailed prompts and delegation patterns.
 
 ## Step 0a: Set Up Artifact Directories
 
-1. **Create transient temp dir** for exploration: `DEMOFLY_TMPDIR=$(node scripts/create-temp-dir.js <name> --type transient)`
-2. **Create session .tmp dir** for drafts: `DEMOFLY_SESSDIR=$(node scripts/create-temp-dir.js <name> --type session)`
+1. **Create transient temp dir** for exploration: `DEMOFLY_TMPDIR=$(node plugins/demofly/scripts/create-temp-dir.js <name> --type transient)`
+2. **Create session .tmp dir** for drafts: `DEMOFLY_SESSDIR=$(node plugins/demofly/scripts/create-temp-dir.js <name> --type session)`
 3. Ensure `.gitignore` includes `demofly/**/.tmp/`.
 
 ## Step 0b: Check Playwright MCP Availability
 
-Verify by calling `mcp__plugin_playwright_playwright__browser_snapshot`. If it fails with "tool not found," instruct the user to install the Playwright MCP plugin and restart Claude Code.
+Try `mcp__demofly-playwright__browser_snapshot` first (headless, configured by `demofly init`). If unavailable, fall back to `mcp__plugin_playwright_playwright__browser_snapshot`.
+
+- **If it succeeds**: Proceed to Step 1.
+- **If headless tools not found AND plugin tools not found**: The user likely hasn't run `demofly init`. Tell them: "Run `demofly init` to set up prerequisites, then restart Claude Code."
+- **If the call fails with "Failed to launch the browser process" or "existing browser session"**: Call `browser_install` to ensure the browser binary is available, then retry. If retry fails, tell the user to run `demofly init` (which configures headless mode) and restart Claude Code.
 
 ## Step 1: Resolve Demo Name
 
@@ -70,16 +74,18 @@ The demo name is: `$ARGUMENTS`. Normalize to kebab-case. If empty, ask the user:
 
 ## Step 2: Infer Current Phase from File Existence
 
-Check `demofly/<name>/` for `proposal.md`, `script.md`, `demo.spec.ts`, and `recordings/`. Resume from the first missing file in the pipeline.
+Check `demofly/<name>/` for artifacts. Resume from the first missing file in the pipeline. The pipeline is **narration-first**: narration drives timing, not the other way around.
 
 | Priority | Condition | Phase |
 |----------|-----------|-------|
 | 1 (lowest) | No recognized files | initialized |
 | 2 | `proposal.md` exists | proposed |
-| 3 | `script.md` exists | scripted |
-| 4 | `demo.spec.ts` exists | built |
-| 5 | `recordings/` contains `.webm`, `.mp4`, or `.mov` | recorded |
-| 6 (highest) | `transcript.md` exists | narrated |
+| 3 | `narration.md` exists | narrated |
+| 4 | `audio/` has `.wav` or `.mp3` files | voiced |
+| 5 | `script.md` exists | mapped |
+| 6 | `demo.spec.ts` exists | built |
+| 7 | `recordings/` contains `.webm`, `.mp4`, or `.mov` | recorded |
+| 8 (highest) | `recordings/final.mp4` exists | assembled |
 
 ## Step 3: Exploration
 
@@ -107,49 +113,22 @@ Do not proceed without user approval.
 
 See `reference.md` §2 for the full proposal.md template.
 
-## Step 4.5: Beat Map ★
+## Step 5: Narration Script ★ NEW
 
-**Goal**: Create a Beat Map table at the top of `script.md`.
+**Goal**: Create `demofly/<name>/narration.md` — a pure storytelling document.
 
-Before writing individual beats, plan the emotional arc as a table mapping each scene to its emotional beat, UI actions, interaction velocity, and silence target. This prevents the "choreographer trap" — writing narration one click at a time.
+Narration is now the **source of truth** for timing. Write the story first, generate audio, then build the action map and Playwright spec to serve the narration. This inverts the old pipeline where narration was fitted into video timing windows.
 
-### Beat Map Format
+### What narration.md Contains
 
-Insert this table at the top of `script.md`, before Scene 1:
+1. **Beat Map** — the emotional arc table (moved from the old script.md)
+2. **Per-scene narration** with `<narration>` tags (same format TTS already parses)
+3. **Emotion/pacing directives** per beat
+4. **Target durations** per beat
+5. **Direction blocks** — advisory text explaining storytelling intent (not passed to TTS)
+6. **Silence beats** with explicit durations: `*(silence — Ns. Description.)*`
 
-```markdown
-## Beat Map
-
-| Scene | Emotional Beat | UI Actions (summary) | Velocity | Silence Target |
-|-------|---------------|---------------------|----------|---------------|
-| 1 | Tension / Problem | Navigate dashboard, hover pain points | Fast / impatient | 20% |
-| 2 | Relief / Solution | Create form, fill fields, submit | Moderate / steady | 30% |
-| 3 ⭐ | Awe / Hero | Trigger AI, watch results appear | Deliberate / slow | 40% |
-| 4 | Confidence / Payoff | Return to dashboard, final state | Moderate | 35% |
-```
-
-### Velocity Profiles
-
-Each emotional phase has a distinct interaction speed. These translate to concrete Playwright timing:
-
-| Phase | Cursor Speed | Click Delay | Type Delay | Post-Action Pause |
-|-------|-------------|-------------|------------|------------------|
-| **Problem** (frustration) | Fast (15 steps) | 600–800ms | 25ms | 300–500ms |
-| **Solution** (capability) | Moderate (25 steps) | 800–1200ms | 35ms | 500–800ms |
-| **Hero** (awe) | Deliberate (40 steps) | 1200–1800ms | 45ms | 1000–2000ms |
-| **Payoff** (confidence) | Moderate (25 steps) | 800–1000ms | 35ms | 500–700ms |
-
-The beat map is your directorial intent. Every subsequent step (scripting, Playwright generation, narration) must respect these velocity and silence targets.
-
-See `reference.md` §§9–10 for detailed velocity profiles and beat map format.
-
-## Step 5: Beat-Sheet Scripting ★ ENHANCED
-
-**Goal**: Create `demofly/<name>/script.md`.
-
-Expand the approved proposal into a beat-centric script. Each scene is composed of numbered beats pairing narration fragments with ordered actions. The beat map (Step 4.5) guides pacing and silence.
-
-### Scripting Rules
+### Narration Rules
 
 **Rule 1 — Bridge Technique**: Every narration beat must connect the *previous* action's result to the *next* intent. Use deictic expressions that create flow:
 - "Now that we've [previous result], let's [next intent]..."
@@ -158,78 +137,142 @@ Expand the approved proposal into a beat-centric script. Each scene is composed 
 
 > **Never write a beat that starts from zero context.** Every sentence bridges backward and forward.
 
-**Rule 2 — Narrative Spans**: A single `<narration>` sentence can span 2–3 Playwright actions. Write one flowing sentence with sync points rather than choppy fragments. Use range headings:
-```
-### {scene}.{start}–{scene}.{end} — {label} [spanning: {first-marker} → {last-marker}]
-```
+**Rule 2 — Narrative Spans**: A single `<narration>` sentence can span 2–3 actions. Write one flowing sentence with sync points rather than choppy fragments.
 
 **Rule 3 — 70/30 Silence Rule**: **Leave at least 30% of every scene as visual "breathing room."** Silence during a visual demo is not dead air — the viewer is watching the product work. Check the beat map silence targets.
 
-> **Bold callout:** If your script has narration covering >70% of any scene's duration, you have too many words. Cut.
+> **Bold callout:** If your narration covers >70% of any scene's duration, you have too many words. Cut.
 
-**Rule 4 — Narrative Lead-in**: Narration starts ~500ms BEFORE the action it describes. The narrator feels like they're "driving" the app, not chasing it. In `demo.spec.ts`, this means the narration marker fires slightly before the interaction marker.
-
-- Polished Keynote: 800ms lead-in
-- Engineering Standup: 200ms lead-in
-- Hype Marketing: 0ms (narration and action are simultaneous)
-
-**Rule 5 — No-Mirror Rule**: **Never describe what the viewer can already see.** If you muted the narration and the demo lost nothing, the narration was worthless. Narrate the invisible — the "why," the time saved, the frustration eliminated.
+**Rule 4 — No-Mirror Rule**: **Never describe what the viewer can already see.** Narrate the invisible — the "why," the time saved, the frustration eliminated.
 
 > **Bold callout:** Run the Mute Test on every beat. Read the narration without the video. Is it interesting as standalone audio? If not, rewrite.
 
-**Rule 6 — Contextual Glance-Backs**: Scenes are not islands. Each scene's opening beat must reference what came before:
-- Scene 2: "With our project created..."
-- Scene 3: "Now that we have the basic structure..."
-- Scene 4: "Everything we just built..."
+**Rule 5 — Contextual Glance-Backs**: Scenes are not islands. Each scene's opening beat must reference what came before.
 
-This creates narrative continuity. The viewer follows a single story, not a sequence of disconnected demonstrations.
+**Rule 6 — Persona Voice**: Apply the persona constraints from §2.
 
-**Rule 7 — Persona Voice**: Apply the persona constraints from §2. Polished Keynote uses short declarative sentences with no jargon. Engineering Standup uses "we" and allows technical terms. Hype Marketing uses fragments and superlatives.
+- **CRITICAL: Wrap all narration text in `<narration>` tags.** The TTS engine ONLY reads text inside `<narration>...</narration>` tags.
+- Use bracketed directives inside tags: `[warmly]`, `[slower]`, `[pause: 0.5s]`.
+- **Run the full Narration Quality Checklist** (12 checks) from `reference.md` §7 before finalizing.
 
-See `reference.md` §§2, 7, 10, 11, 12 for beat format, narration style guide, beat map format, lead-in technique, and a complete annotated example.
+See `reference.md` §2 for the narration.md format template and §§7, 8, 11 for narration style guide, persona details, and lead-in technique.
 
-## Step 6: Playwright "Director" Generation ★ ENHANCED
+## Step 6: TTS Generation
+
+**Goal**: Generate audio files from narration.md → `demofly/<name>/audio/`.
+
+Run TTS on the narration script to produce per-scene `.wav` files:
+
+```bash
+source ~/.nvm/nvm.sh && nvm use 22 > /dev/null 2>&1 && demofly generate <name> --audio
+```
+
+The `--audio` flag reads `narration.md` (not the old `transcript.md`) and produces per-scene audio in `audio/`.
+
+Options:
+- `--voice <name>` and `--provider <provider>` to select a specific voice
+- `--speed <multiplier>` to adjust speech rate
+- `--scene <id>` to regenerate a single scene
+
+### Timestamp Extraction (Optional)
+
+If Whisper is available, extract word-level timestamps from the generated audio:
+
+```bash
+demofly generate <name> --timestamps
+```
+
+This produces `audio/timestamps.json` with per-scene word and phrase timestamps. These timestamps become the primary timing targets for the Playwright spec.
+
+If Whisper is not installed, the CLI uses duration-only alignment (less precise but functional) and prints a warning suggesting `pip install openai-whisper`.
+
+## Step 7: Action Mapping
+
+**Goal**: Create `demofly/<name>/script.md` — an action map referencing audio timestamps.
+
+script.md is now an **action map only** — it no longer contains narration text (that lives in narration.md). Each action references a phrase from narration.md by beat ID and audio timestamp.
+
+### Action Map Structure
+
+Each scene has an audio budget derived from the TTS output:
+```markdown
+## Scene 2: Three Fields and Done [audio: 5.2s narration + 4.0s silence + 1.8s pad = 11.0s total]
+```
+
+Each beat references a specific audio timestamp as its "Phrase Anchor":
+```markdown
+### 2.1 — Open Form → `scene-2:click:new-project-btn`
+**Phrase Anchor:** "Name it, deadline, team lead — done." @ 2400ms
+
+| At (audio ms) | Playwright Code | Action |
+|---------------|----------------|--------|
+| 0 | `mark("scene-2", "start")` | Scene start |
+| 2400 | `await moveTo(page, newBtn, prevBox)` | Move to New Project |
+| 2600 | `await newBtn.click()` | Click New Project |
+```
+
+### Velocity Profiles (Secondary)
+
+Velocity profiles from §9 still apply as secondary modifiers for cursor speed, type delay, and post-action pauses — but the primary timing target is now the audio timestamps.
+
+| Phase | Cursor Speed | Click Delay | Type Delay | Post-Action Pause |
+|-------|-------------|-------------|------------|------------------|
+| **Problem** (frustration) | Fast (15 steps) | 600–800ms | 25ms | 300–500ms |
+| **Solution** (capability) | Moderate (25 steps) | 800–1200ms | 35ms | 500–800ms |
+| **Hero** (awe) | Deliberate (40 steps) | 1200–1800ms | 45ms | 1000–2000ms |
+| **Payoff** (confidence) | Moderate (25 steps) | 800–1000ms | 35ms | 500–700ms |
+
+See `reference.md` §§2, 9, 10 for action map format, velocity profiles, and beat map format.
+
+## Step 8: Playwright "Director" Generation ★ ENHANCED
 
 **Goal**: Create `demofly/<name>/demo.spec.ts` and `playwright.config.ts`.
 
-The spec MUST include the `mark()` helper and `moveCursor()`:
+> **Preferred approach:** Copy the shared template (`plugins/demofly/scripts/helpers.ts`) into the demo directory and import helpers. See `reference.md` §14.
+
+### Audio-Informed Timing
+
+The spec uses `SCENE_TIMING` constants derived from `audio/timestamps.json` (or audio durations if timestamps aren't available). The `waitUntil()` helper paces actions to audio targets:
 
 ```typescript
-const demoStart = Date.now();
-function mark(scene: string, action: string, target: string) {
-  const elapsed = Date.now() - demoStart;
-  console.log(`DEMOFLY|${scene}|${action}|${target}|${elapsed}`);
-}
+import { createMarker, moveTo, injectCursor, waitUntil } from './helpers';
 
-async function moveCursor(page, selector, speed: 'fast' | 'smooth' = 'smooth') {
-  const box = await page.locator(selector).boundingBox();
-  if (!box) return;
-  const steps = speed === 'smooth' ? 40 : 15;
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps });
-  await page.waitForTimeout(100);
-}
+// Derived from timestamps.json
+const SCENE_TIMING = {
+  'scene-1': { durationMs: 15000 },
+  'scene-2': { durationMs: 11000 },
+  'scene-3': { durationMs: 25000 },
+};
+
+test('demo recording', async ({ page }) => {
+  const mark = createMarker();
+  // ...
+  const sceneStart = Date.now();
+  mark('scene-2', 'start');
+  await waitUntil(page, sceneStart, 2400); // wait until 2.4s into scene
+  mark('scene-2', 'click', 'new-project-btn');
+  await btn.click();
+});
 ```
-
-> **Preferred approach:** Copy the shared template (`plugins/demofly/templates/helpers.ts`) into the demo directory and import helpers. See `reference.md` §14.
 
 ### Per-Scene Interaction Velocity
 
-Apply the velocity profile from the beat map (Step 4.5) to each scene's Playwright timing. Problem scenes use fast cursor movements and short pauses. Hero scenes use deliberate, slow movements with long pauses. Concretely:
+Velocity profiles from the beat map apply as secondary modifiers:
 
-- **Problem scenes**: `moveCursor(page, sel, 'fast')`, `waitForTimeout(300-500)` between actions
+- **Problem scenes**: Fast cursor, `waitForTimeout(300-500)` between actions
 - **Solution scenes**: Default timing, `waitForTimeout(500-800)` between actions
-- **Hero scenes**: Extra-slow cursor, `waitForTimeout(1000-2000)` between actions, extra dwell time after the reveal
+- **Hero scenes**: Extra-slow cursor, `waitForTimeout(1000-2000)` between actions
 
 ### Behaviors
 
-- Use `moveCursor` before every click.
+- Use `moveTo` before every click.
 - Use `pressSequentially(text, { delay: 35 })` for human-like typing (adjust per velocity profile).
 - **Outro Dwell**: Add `await page.waitForTimeout(4000)` at the end of the test so the narrator can finish.
 - **Headless only** — never set `headless: false`. See §16.
 
 See `reference.md` §§3–5 for timing markers, human-like interaction patterns, and Playwright config.
 
-## Step 7: Recording
+## Step 9: Recording
 
 **Goal**: Run test and extract timing.
 
@@ -247,39 +290,38 @@ After recording:
 
 See `reference.md` §3 for marker vocabulary and §5 for post-recording file handling.
 
-## Step 8: Narration Synthesis ★ ENHANCED
+## Step 10: Intelligent Assembly
 
-**Goal**: Generate `demofly/<name>/transcript.md`.
+**Goal**: Align audio to video, generate edit proposals, and produce `recordings/final.mp4`.
 
-Sync the narrative beats to the actual timestamps in `timing.json`.
+The assembly pipeline reconciles any timing drift between the narration audio and the recorded video:
 
-### Bridge + Lead-in Applied
+### Simple Assembly (Default Fallback)
 
-- Every beat's narration must use the **Bridge Technique** (Rule 1) — connecting previous result to next intent.
-- Narration timestamps should account for the **lead-in** — narration starts ~500ms before the corresponding action marker (adjusted per persona).
+```bash
+demofly generate <name>
+```
 
-### Persona Voice Applied
+If no timestamps.json exists or Whisper is unavailable, falls back to simple `adelay + amix` stitching (same as the old pipeline).
 
-- Apply the persona's TTS emotion tags, sentence structure, and vocabulary constraints.
-- Polished Keynote: `[warmly]`, `[confidently]` — smooth, declarative
-- Engineering Standup: `[casual]`, `[matter-of-fact]` — authentic, technical
-- Hype Marketing: `[excited]`, `[energetic]` — punchy, fast
+### Intelligent Assembly (with `--assemble`)
 
-### Critical Requirements
+```bash
+demofly generate <name> --assemble
+```
 
-- **CRITICAL: Wrap all narration text in `<narration>` tags.** The TTS engine ONLY reads text inside `<narration>...</narration>` tags.
-- Use bracketed directives inside tags: `[warmly]`, `[slower]`, `[pause: 0.5s]`.
-- **Word budget per beat**: ~2.5 words/sec × window duration × 0.6. Hard cap at 2.5 words/sec × window.
-- Beats under 1.5s window get no narration (mark silent).
-- **Run the full Narration Quality Checklist** (12 checks) from `reference.md` §7 before finalizing.
+1. **Align** — Compares `audio/timestamps.json` against `recordings/timing.json` to produce `recordings/alignment.json` with per-beat drift measurements.
+2. **Edit Proposals** — LLM generates `recordings/edit-decisions.json` with retiming instructions (speed up, slow down, freeze frame, trim silence, etc.).
+3. **Retiming** — FFmpeg executes the edit decisions: segment-based transforms with hard limits (max 1.5x speedup, max 1.33x slowdown, never speed up hero moments, max 3s freeze frame).
+4. **Stitch** — Combines retimed video segments with audio into `recordings/final.mp4`.
 
-See `reference.md` §§7, 8, 11, 13 for narration style guide, persona details, lead-in technique, and transcript format.
+Decisions with confidence < 0.7 are logged but skipped.
 
-## Step 9: Final Assembly
+### Assembly Flags
 
-**TTS**: `demofly tts <name>`
-
-**Assembly**: `demofly generate <name>`
+- `--align` — Produce alignment.json only (no retiming)
+- `--assemble` — Full intelligent assembly (align → edit proposals → retiming → stitch)
+- No flag — Simple stitch fallback
 
 Report success and provide the path to `recordings/final.mp4`.
 

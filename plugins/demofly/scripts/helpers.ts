@@ -73,6 +73,26 @@ export async function createSessionTmpDir(demoDir: string): Promise<string> {
   return dir;
 }
 
+/**
+ * Wait until a target time offset within a scene has elapsed.
+ * Used to pace Playwright actions to audio timestamp targets.
+ *
+ * @param page - Playwright page instance
+ * @param sceneStart - Date.now() captured at scene start
+ * @param targetMs - Target offset in ms from scene start
+ * @param minMs - Minimum wait time to avoid zero-waits (default 200ms)
+ */
+export async function waitUntil(
+  page: Page,
+  sceneStart: number,
+  targetMs: number,
+  minMs = 200
+): Promise<void> {
+  const elapsed = Date.now() - sceneStart;
+  const waitMs = Math.max(minMs, targetMs - elapsed);
+  await page.waitForTimeout(waitMs);
+}
+
 export async function injectCursor(page: Page): Promise<void> {
   await page.evaluate(() => {
     const cursor = document.createElement('div');
