@@ -106,7 +106,7 @@ Every proposal must start with the audience's pain point, not the product name.
 Structure the demo as a narrative with rising action, not a feature walkthrough.
 
 ```markdown
-# Demo Proposal: [Demo Name]
+# [Demo Name]
 
 **Product:** [Product name]
 **Target Duration:** [e.g. 90 seconds]
@@ -238,7 +238,7 @@ audio; the action map (script.md) is derived from it afterward.
 
 ### Beat 1.2 — Dashboard Glance [target: 4s]
 
-*(silence — 4s. Let the viewer take in the dashboard.)*
+*(silence — 1.5s. Let the viewer take in the dashboard.)*
 
 ### Beat 1.3 — Transition [target: 2s]
 
@@ -253,7 +253,7 @@ audio; the action map (script.md) is derived from it afterward.
 
 ### Beat 2.1 — Open Form [target: 3s]
 
-*(silence — 3s. Modal opens.)*
+*(silence — 1.0s. Modal opens.)*
 
 ### Beat 2.2–2.3 — Fill and Submit [target: 8s]
 
@@ -261,7 +261,7 @@ audio; the action map (script.md) is derived from it afterward.
 
 ### Beat 2.4 — Redirect [target: 3s]
 
-*(silence — 3s. Viewer watches the instant redirect.)*
+*(silence — 1.0s. Viewer watches the instant redirect.)*
 
 ---
 
@@ -276,7 +276,7 @@ audio; the action map (script.md) is derived from it afterward.
 
 ### Beat 3.2 — The Reveal [target: 8s]
 
-*(silence — 8s. Let the viewer watch AI work.)*
+*(silence — 1.5s. Let the viewer watch AI work.)*
 
 ### Beat 3.3 — Impact [target: 6s]
 
@@ -284,7 +284,7 @@ audio; the action map (script.md) is derived from it afterward.
 
 ### Beat 3.4 — Accept [target: 5s]
 
-*(silence — 5s. One click, tasks fill the board.)*
+*(silence — 1.5s. One click, tasks fill the board.)*
 
 ---
 
@@ -294,7 +294,7 @@ audio; the action map (script.md) is derived from it afterward.
 
 ### Beat 4.1 — Return [target: 3s]
 
-*(silence — 3s. Navigate to dashboard.)*
+*(silence — 1.0s. Navigate to dashboard.)*
 
 ### Beat 4.2 — Close [target: 7s]
 
@@ -926,12 +926,14 @@ Never open with the product name. Open with the audience's problem:
 
 | Situation                        | Recommended Silence      | Why                                 |
 | -------------------------------- | ------------------------ | ----------------------------------- |
-| After a rhetorical question      | 1.5-2.0s                 | Let the viewer answer in their head |
-| Before the hero reveal           | 2-3s pure silence        | Build anticipation                  |
-| After the hero payoff line       | 1-2s                     | Let the moment breathe              |
-| Between dense narration blocks   | ≥1s pause or silent beat | Prevent cognitive overload          |
-| At scene transitions             | ≥1s                      | Clean mental reset                  |
-| After a surprising visual change | 1-1.5s                   | Let the viewer register             |
+| After a rhetorical question      | 1.0-1.5s                 | Let the viewer answer in their head |
+| Before the hero reveal           | 1.0-1.5s pure silence    | Build anticipation                  |
+| After the hero payoff line       | 0.5-1.0s                 | Let the moment breathe              |
+| Between dense narration blocks   | 0.5-1.0s pause or silent beat | Prevent cognitive overload     |
+| At scene transitions             | 0.5-1.0s                 | Clean mental reset                  |
+| After a surprising visual change | 0.5-1.0s                 | Let the viewer register             |
+
+**Maximum silence duration:** No single silence beat should exceed **1.5s**. Longer silences feel like dead air in product demos.
 
 **Back-to-back narration cap:** No more than **3 consecutive narrated beats** without
 a silent beat or ≥1.0s pause.
@@ -1156,7 +1158,7 @@ narration.md (storytelling) and script.md (action map).
 
 ### Beat 1.2 — Dashboard Glance [target: 4s]
 
-*(silence — 4s. Let viewer take in the dashboard.)*
+*(silence — 1.5s. Let viewer take in the dashboard.)*
 
 ### Beat 1.3 — Transition [target: 2s]
 
@@ -1170,7 +1172,7 @@ narration.md (storytelling) and script.md (action map).
 
 ### Beat 2.1 — Open Form [target: 3s]
 
-*(silence — 3s. Modal opens.)*
+*(silence — 1.0s. Modal opens.)*
 
 ### Beat 2.2–2.3 — Fill and Submit [target: 8s]
 
@@ -1178,13 +1180,13 @@ narration.md (storytelling) and script.md (action map).
 
 ### Beat 2.4 — Redirect [target: 3s]
 
-*(silence — 3s. Viewer watches instant redirect.)*
+*(silence — 1.0s. Viewer watches instant redirect.)*
 
 ---
 
 ## Scene 3: The AI Moment ⭐ HERO [target: 30s]
 
-> **Direction:** Wow moment. Deliberate pacing. Long silence around reveal.
+> **Direction:** Wow moment. Deliberate pacing. Brief silence around reveal.
 
 ### Beat 3.1 — Setup [target: 4s]
 
@@ -1192,7 +1194,7 @@ narration.md (storytelling) and script.md (action map).
 
 ### Beat 3.2 — The Reveal [target: 8s]
 
-*(silence — 8s. Let viewer watch AI work.)*
+*(silence — 1.5s. Let viewer watch AI work.)*
 
 ### Beat 3.3 — Impact [target: 6s]
 
@@ -1200,7 +1202,7 @@ narration.md (storytelling) and script.md (action map).
 
 ### Beat 3.4 — Accept [target: 5s]
 
-*(silence — 5s. One click, tasks fill the board.)*
+*(silence — 1.5s. One click, tasks fill the board.)*
 
 ---
 
@@ -1210,7 +1212,7 @@ narration.md (storytelling) and script.md (action map).
 
 ### Beat 4.1 — Return [target: 3s]
 
-*(silence — 3s. Navigate to dashboard.)*
+*(silence — 1.0s. Navigate to dashboard.)*
 
 ### Beat 4.2 — Close [target: 7s]
 
@@ -1228,7 +1230,7 @@ narration.md (storytelling) and script.md (action map).
 
 ---
 
-## Scene 1: The Problem [audio: 6.2s narration + 6.0s silence + 2.8s pad = 15.0s total]
+## Scene 1: The Problem [audio: 6.2s narration + 2.5s silence + 1.3s pad = 10.0s total]
 
 ### 1.1 — Hook → `scene-1:start`
 **Phrase Anchor:** "How long does it take..." @ 0ms
@@ -1257,7 +1259,7 @@ narration.md (storytelling) and script.md (action map).
 
 ---
 
-## Scene 3: The AI Moment ⭐ HERO [audio: 8.1s narration + 13.0s silence + 8.9s pad = 30.0s total]
+## Scene 3: The AI Moment ⭐ HERO [audio: 8.1s narration + 1.5s silence + 5.4s pad = 15.0s total]
 
 ### 3.1 — Setup → `scene-3:click:suggest-btn`
 **Phrase Anchor:** "Now here's the part that changes everything." @ 0ms

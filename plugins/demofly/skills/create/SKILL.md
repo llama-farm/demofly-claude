@@ -196,7 +196,7 @@ script.md is now an **action map only** — it no longer contains narration text
 
 Each scene has an audio budget derived from the TTS output:
 ```markdown
-## Scene 2: Three Fields and Done [audio: 5.2s narration + 4.0s silence + 1.8s pad = 11.0s total]
+## Scene 2: Three Fields and Done [audio: 5.2s narration + 1.5s silence + 1.3s pad = 8.0s total]
 ```
 
 Each beat references a specific audio timestamp as its "Phrase Anchor":
