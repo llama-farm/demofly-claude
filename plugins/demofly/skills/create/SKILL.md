@@ -83,7 +83,7 @@ Check `demofly/<name>/` for artifacts. Resume from the first missing file in the
 | 3 | `narration.md` exists | narrated |
 | 4 | `audio/` has `.wav` or `.mp3` files | voiced |
 | 5 | `script.md` exists | mapped |
-| 6 | `demo.spec.ts` exists | built |
+| 6 | `scenes/` directory has `.spec.ts` files (or legacy `demo.spec.ts` exists) | built |
 | 7 | `recordings/` contains `.webm`, `.mp4`, or `.mov` | recorded |
 | 8 (highest) | `recordings/final.mp4` exists | assembled |
 
@@ -224,35 +224,125 @@ Velocity profiles from §9 still apply as secondary modifiers for cursor speed, 
 
 See `reference.md` §§2, 9, 10 for action map format, velocity profiles, and beat map format.
 
-## Step 8: Playwright "Director" Generation ★ ENHANCED
+## Step 8: Playwright "Director" Generation ★ PER-SCENE
 
-**Goal**: Create `demofly/<name>/demo.spec.ts` and `playwright.config.ts`.
+**Goal**: Create per-scene spec files in `demofly/<name>/scenes/`, a `shared.ts` module, `playwright.config.ts`, and `playwright-verify.config.ts`.
 
 > **Preferred approach:** Copy the shared template (`plugins/demofly/scripts/helpers.ts`) into the demo directory and import helpers. See `reference.md` §14.
 
-### Audio-Informed Timing
+### Per-Scene Spec Architecture
 
-The spec uses `SCENE_TIMING` constants derived from `audio/timestamps.json` (or audio durations if timestamps aren't available). The `waitUntil()` helper paces actions to audio targets:
+Instead of a single monolithic `demo.spec.ts`, generate **one spec file per scene** (or per scene group) in a `scenes/` subdirectory:
+
+```
+demofly/<name>/
+  scenes/
+    scene-1.spec.ts          # independent scene
+    scene-2.spec.ts          # independent scene
+    scene-3-4.spec.ts        # grouped: scene-3 depends on scene-4's state
+    scene-5.spec.ts          # independent scene
+  shared.ts                  # auth mocks, SCENE_GROUPS, re-exports helpers
+  helpers.ts                 # copied from plugins/demofly/scripts/helpers.ts
+  playwright.config.ts       # recording config (video: "on")
+  playwright-verify.config.ts # dry-run config (video: "off", fast timeout)
+```
+
+### shared.ts — Scene Metadata and Setup
+
+Generate `shared.ts` with:
+1. **`SCENE_GROUPS`** array declaring scene groupings
+2. **`setup(page)`** function for auth mocks and cursor injection
+3. **Re-exports** from `../helpers` for convenience
 
 ```typescript
-import { createMarker, moveTo, injectCursor, waitUntil } from './helpers';
+import { Page } from '@playwright/test';
+import { injectCursor } from '../helpers';
 
-// Derived from timestamps.json
-const SCENE_TIMING = {
-  'scene-1': { durationMs: 15000 },
-  'scene-2': { durationMs: 11000 },
-  'scene-3': { durationMs: 25000 },
-};
+export const SCENE_GROUPS = [
+  { id: 'scene-1', scenes: ['scene-1'], startUrl: '/', independent: true },
+  { id: 'scene-2', scenes: ['scene-2'], startUrl: '/new', independent: true },
+  { id: 'scene-3-4', scenes: ['scene-3', 'scene-4'], startUrl: '/demos/01KJ...', independent: false },
+  { id: 'scene-5', scenes: ['scene-5'], startUrl: '/demos/01KJ...', independent: true },
+];
 
-test('demo recording', async ({ page }) => {
+export const SCENE_META = Object.fromEntries(
+  SCENE_GROUPS.flatMap(g => g.scenes.map(s => [s, g]))
+);
+
+export async function setup(page: Page) {
+  // Auth mocks
+  await page.route('**/api/auth/get-session', route =>
+    route.fulfill({ json: { /* session mock */ } })
+  );
+  // Add other route mocks as needed
+
+  await injectCursor(page);
+}
+```
+
+### Scene Grouping Rules
+
+- **Default**: Each scene gets its own spec file (independent)
+- **Group when**: One scene's UI mutation is the prerequisite for the next scene (e.g., scene-3 opens a modal that scene-4 interacts with)
+- **Naming**: Grouped specs use combined IDs: `scene-3-4.spec.ts`
+- **Timing markers**: Grouped specs emit markers for all contained scenes (`scene-3:start`, `scene-3:end`, `scene-4:start`, `scene-4:end`)
+
+### Direct Navigation Per Scene
+
+Each scene spec navigates directly to its starting URL — never clicks through from a prior page:
+
+```typescript
+test('scene-2: create new demo', async ({ page }) => {
+  await setup(page);
   const mark = createMarker();
-  // ...
+
+  // Navigate directly to starting URL
+  await page.goto('/new');
+  // Verify expected state before starting
+  await page.getByRole('heading', { name: 'Create Demo' }).waitFor({ state: 'visible' });
+
   const sceneStart = Date.now();
   mark('scene-2', 'start');
-  await waitUntil(page, sceneStart, 2400); // wait until 2.4s into scene
-  mark('scene-2', 'click', 'new-project-btn');
-  await btn.click();
+  // ... scene actions ...
+  mark('scene-2', 'end');
 });
+```
+
+### Fallback Selector Chains via `resolve()`
+
+Use `resolve()` from helpers for **every interactive element**. Provide multiple selector strategies from most specific to broadest:
+
+```typescript
+import { resolve } from '../helpers';
+
+const previewBtn = await resolve(page, {
+  description: 'Preview button in the top toolbar',
+  selectors: [
+    () => page.getByRole('button', { name: 'Preview', exact: true }),
+    () => page.locator('button').filter({ hasText: /^Preview$/ }).first(),
+    () => page.locator('[data-testid="preview-btn"]'),
+  ],
+});
+await previewBtn.click();
+```
+
+**Selector strategy order:**
+1. Exact role match (`getByRole` with `exact: true`)
+2. Text match with `.first()` or `.filter()` for disambiguation
+3. `data-testid` or structural selectors as last resort
+
+### Audio-Informed Timing
+
+Each scene spec uses `SCENE_TIMING` constants derived from `audio/timestamps.json`. The `waitUntil()` helper paces actions to audio targets:
+
+```typescript
+const SCENE_TIMING = { durationMs: 11000 };
+
+const sceneStart = Date.now();
+mark('scene-2', 'start');
+await waitUntil(page, sceneStart, 2400); // wait until 2.4s into scene
+mark('scene-2', 'click', 'new-project-btn');
+await btn.click();
 ```
 
 ### Per-Scene Interaction Velocity
@@ -267,26 +357,66 @@ Velocity profiles from the beat map apply as secondary modifiers:
 
 - Use `moveTo` before every click.
 - Use `pressSequentially(text, { delay: 35 })` for human-like typing (adjust per velocity profile).
-- **Outro Dwell**: Add `await page.waitForTimeout(4000)` at the end of the test so the narrator can finish.
+- **Outro Dwell**: Add `await page.waitForTimeout(4000)` at the end of the last scene so the narrator can finish.
 - **Headless only** — never set `headless: false`. See §16.
 
 See `reference.md` §§3–5 for timing markers, human-like interaction patterns, and Playwright config.
 
-## Step 9: Recording
+## Step 8b: Verification Dry-Runs
 
-**Goal**: Run test and extract timing.
+**Goal**: Verify each scene spec works before the final recording pass.
+
+After writing each scene spec, immediately run a fast dry-run:
 
 ```bash
-cd <project-root> && npx playwright test demofly/<name>/demo.spec.ts --config=demofly/<name>/playwright.config.ts 2>&1 | tee output.log
+cd <project-root> && npx playwright test demofly/<name>/scenes/<scene-spec>.spec.ts --config=demofly/<name>/playwright-verify.config.ts 2>&1 | tee verify-output.log
+```
+
+**Verification loop per scene:**
+1. Write scene spec
+2. Run dry-run with `playwright-verify.config.ts` (video off, `slowMo: 50`, timeout 30s, headless)
+3. If pass → proceed to next scene
+4. If fail → read error message + page accessibility snapshot, fix the spec, re-run
+5. Max 3 retries per scene before surfacing to user
+
+**On failure, capture diagnostics:**
+- The Playwright error message
+- The page's accessibility snapshot at failure time (from `page.accessibility.snapshot()` or from `ResolveError`)
+- The current URL
+- Include all diagnostics when delegating to a debug sub-agent
+
+**Do NOT proceed to recording until all scene specs pass verification.**
+
+## Step 9: Recording
+
+**Goal**: Record each scene group independently and extract per-scene timing.
+
+Record scene groups in sequence using the CLI:
+
+```bash
+demofly generate <name> --record
+```
+
+Or record manually per scene group:
+
+```bash
+cd <project-root> && npx playwright test demofly/<name>/scenes/<group-id>.spec.ts --config=demofly/<name>/playwright.config.ts 2>&1 | tee output-<group-id>.log
 ```
 
 Set Bash timeout to 600000ms.
 
-After recording:
-- Extract timing data: `node plugins/demofly/skills/create/extract-timing.js output.log demofly/<name>/recordings/timing.json`
+**Per-scene recording behavior:**
+- Each scene group is recorded independently
+- If a scene group's recording already exists (video file present), it is skipped (unless `--force`)
+- If a scene group fails, remaining groups still get recorded (partial success)
+- Use `--scene <scene-id>` to record/re-record just one scene's group
+
+**After each scene group recording:**
+- Extract timing data: `node plugins/demofly/skills/create/extract-timing.js output-<group-id>.log demofly/<name>/recordings/scenes/<group-id>/timing.json`
 - Verify the video file exists in `test-results/*/video.webm`
-- Move it to `demofly/<name>/recordings/video.webm`
-- If the test failed, enter the debugging loop (delegate to sub-agent, fix, re-run — max 3 cycles).
+- Move it to `demofly/<name>/recordings/scenes/<group-id>/video.webm`
+- For multi-scene groups: split the video into per-scene clips using timing markers
+- If the test failed, enter the debugging loop (delegate to sub-agent, fix, re-run — max 3 cycles for each scene group)
 
 See `reference.md` §3 for marker vocabulary and §5 for post-recording file handling.
 

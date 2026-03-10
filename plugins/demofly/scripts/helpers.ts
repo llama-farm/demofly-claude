@@ -3,6 +3,55 @@ import { tmpdir } from 'node:os';
 import { mkdtemp, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 
+export class ResolveError extends Error {
+  constructor(
+    public readonly description: string,
+    public readonly selectorsTriedCount: number,
+    public readonly snapshot: string
+  ) {
+    super(
+      `Failed to resolve "${description}". Tried ${selectorsTriedCount} selectors.\n\nPage snapshot (truncated):\n${snapshot.slice(0, 2000)}`
+    );
+    this.name = 'ResolveError';
+  }
+}
+
+export async function resolve(
+  page: Page,
+  opts: {
+    description: string;
+    selectors: (() => Locator)[];
+    timeout?: number;
+  }
+): Promise<Locator> {
+  const { description, selectors, timeout = 5000 } = opts;
+
+  for (const factory of selectors) {
+    try {
+      const locator = factory();
+      await locator.first().waitFor({ state: 'visible', timeout });
+      const count = await locator.count();
+      if (count === 1) {
+        return locator;
+      }
+      // Multiple matches — try the next selector
+    } catch {
+      // Timeout, zero matches, or factory threw — try the next selector
+    }
+  }
+
+  let snapshot = '';
+  try {
+    snapshot = (await page.accessibility.snapshot())
+      ? JSON.stringify(await page.accessibility.snapshot(), null, 2)
+      : '';
+  } catch {
+    snapshot = '<snapshot unavailable>';
+  }
+
+  throw new ResolveError(description, selectors.length, snapshot);
+}
+
 export function createMarker(): (scene: string, action: string, target?: string) => void {
   const t0 = Date.now();
   return (scene: string, action: string, target?: string) =>

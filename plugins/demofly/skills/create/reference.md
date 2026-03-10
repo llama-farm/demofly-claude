@@ -25,10 +25,12 @@ context.md → proposal.md → narration.md → audio/ + timestamps.json
                                           script.md (action map)
                                                |
                                                v
-                                          demo.spec.ts + playwright.config.ts
+                                          scenes/*.spec.ts + shared.ts + playwright.config.ts
+                                               |
+                                          [dry-run verify each scene]
                                                |
                                                v
-                                          video.webm + timing.json
+                                          per-scene recordings/ + timing.json
                                                |
                                                v
                                     alignment.json → edit-decisions.json → final.mp4
@@ -44,9 +46,11 @@ context.md → proposal.md → narration.md → audio/ + timestamps.json
 | `narration.md`         | `demofly/<name>/narration.md`                 | Pure storytelling document: beat map, per-scene narration with `<narration>` tags, emotion/pacing directives.   |
 | `timestamps.json`      | `demofly/<name>/audio/timestamps.json`        | Word-level and phrase-level timestamps from Whisper, run on TTS output. Primary timing target for Playwright.   |
 | `script.md`            | `demofly/<name>/script.md`                    | Action map only: UI actions with phrase anchors referencing audio timestamps. No narration text.                 |
-| `demo.spec.ts`         | `demofly/<name>/demo.spec.ts`                 | Executable Playwright test with timing markers, audio-informed pacing via `waitUntil()`, fake cursor.           |
-| `playwright.config.ts` | `demofly/<name>/playwright.config.ts`         | Recording configuration.                                                                                        |
-| `timing.json`          | `demofly/<name>/recordings/timing.json`       | Scene and action timestamps extracted from DEMOFLY markers in console output.                                   |
+| `scenes/*.spec.ts`     | `demofly/<name>/scenes/scene-N.spec.ts`       | Per-scene Playwright specs with timing markers, `resolve()` fallback selectors, audio-informed pacing.          |
+| `shared.ts`            | `demofly/<name>/scenes/shared.ts`             | Auth mocks, `SCENE_GROUPS` metadata, `setup()` function, re-exports helpers.                                   |
+| `playwright.config.ts` | `demofly/<name>/playwright.config.ts`         | Recording configuration (video on).                                                                             |
+| `playwright-verify.config.ts` | `demofly/<name>/playwright-verify.config.ts` | Dry-run verification configuration (video off, fast timeout).                                                |
+| `timing.json`          | `demofly/<name>/recordings/scenes/<id>/timing.json` | Per-scene timing data extracted from DEMOFLY markers.                                                     |
 | `alignment.json`       | `demofly/<name>/recordings/alignment.json`    | Per-beat drift comparison between audio timestamps and video DEMOFLY markers.                                   |
 | `edit-decisions.json`  | `demofly/<name>/recordings/edit-decisions.json` | LLM-generated retiming instructions, auto-applied by ffmpeg.                                                  |
 
@@ -679,6 +683,7 @@ export default defineConfig({
     baseURL: "http://127.0.0.1:3000",
     viewport: { width: 1280, height: 800 },
     video: "on",
+    actionTimeout: 10_000,
     launchOptions: {
       headless: true,
       slowMo: 50,
@@ -693,15 +698,60 @@ export default defineConfig({
 - `timeout: 600_000` — Demos can run several minutes.
 - `viewport: 1280x800` — Standard 16:10 demo resolution.
 - `video: 'on'` — Records video for every test run.
+- `actionTimeout: 10_000` — Fail individual actions after 10s instead of hanging indefinitely (the default is no timeout).
 - `headless: true` — **All browser launches MUST be headless.**
 - `slowMo: 50` — Adds 50ms between every Playwright action.
 - `baseURL` — Update to match the URL in `context.md`.
 
+### Verification Configuration Template
+
+Generate `playwright-verify.config.ts` alongside the recording config. Used for fast dry-runs during spec authoring:
+
+```typescript
+import { defineConfig } from "@playwright/test";
+
+export default defineConfig({
+  testDir: "./scenes",
+  timeout: 30_000,
+  expect: {
+    timeout: 10_000,
+  },
+  use: {
+    baseURL: "http://127.0.0.1:3000",
+    viewport: { width: 1280, height: 800 },
+    video: "off",
+    actionTimeout: 10_000,
+    launchOptions: {
+      headless: true,
+      slowMo: 50,
+    },
+  },
+  reporter: [["list"]],
+});
+```
+
+**Key differences from recording config:**
+- `video: "off"` — No video capture, much faster
+- `timeout: 30_000` — Fail fast during dry-runs
+- `testDir: "./scenes"` — Points to per-scene spec directory
+
 ### Bash Tool Timeout
 
-When executing from the Bash tool, always set `timeout: 600000` (milliseconds).
+When executing from the Bash tool, always set `timeout: 600000` (milliseconds) for recordings. For dry-run verification, `timeout: 60000` (60s) is sufficient.
 
-### Post-Recording File Handling
+### Post-Recording File Handling (Per-Scene)
+
+For each scene group:
+
+1. Find the video file: `test-results/*/video.webm`
+2. Create per-scene recordings dir: `mkdir -p demofly/<name>/recordings/scenes/<group-id>`
+3. Move video: `mv test-results/*/video.webm demofly/<name>/recordings/scenes/<group-id>/video.webm`
+4. Extract timing: `node plugins/demofly/skills/create/extract-timing.js output-<group-id>.log demofly/<name>/recordings/scenes/<group-id>/timing.json`
+5. For multi-scene groups: split video into per-scene clips using timing markers
+
+### Legacy Post-Recording File Handling
+
+For backward compatibility with monolithic `demo.spec.ts`:
 
 1. Find the video file: `test-results/*/video.webm`
 2. Create recordings dir: `mkdir -p demofly/<name>/recordings`
@@ -1501,31 +1551,41 @@ plugins/demofly/scripts/helpers.ts
 
 ### Setup
 
-Copy into the demo directory before writing `demo.spec.ts`:
+Copy into the demo directory before writing scene specs:
 
 ```bash
 cp plugins/demofly/scripts/helpers.ts demofly/<name>/helpers.ts
 ```
 
-### Usage
+### Usage (Per-Scene Specs)
 
 ```typescript
+// scenes/scene-1.spec.ts
 import { test } from "@playwright/test";
-import { createMarker, moveTo, waitUntil, injectCursor } from "./helpers";
+import { createMarker, moveTo, waitUntil, resolve } from "../helpers";
+import { setup, SCENE_META } from "./shared";
 
-test("demo recording", async ({ page }) => {
+test("scene-1: the problem", async ({ page }) => {
+  await setup(page);
   const mark = createMarker();
-  await page.goto("http://127.0.0.1:3000");
-  await injectCursor(page);
   let prevBox = null;
 
-  // Scene timing derived from timestamps.json
+  // Navigate directly to starting URL
+  await page.goto("/");
+  await page.getByRole("heading", { name: "Dashboard" }).waitFor({ state: "visible" });
+
   const sceneStart = Date.now();
   mark("scene-1", "start");
 
-  // Wait until audio timestamp target, then act
-  await waitUntil(page, sceneStart, 800); // wait until 800ms into scene
-  const btn = page.getByRole("button", { name: "New Project" });
+  // Use resolve() for resilient element selection
+  await waitUntil(page, sceneStart, 800);
+  const btn = await resolve(page, {
+    description: "New Project button",
+    selectors: [
+      () => page.getByRole("button", { name: "New Project", exact: true }),
+      () => page.locator("button").filter({ hasText: /New Project/ }).first(),
+    ],
+  });
   prevBox = await moveTo(page, btn, prevBox);
   mark("scene-1", "click", "new-project-btn");
   await btn.click();
@@ -1539,8 +1599,33 @@ test("demo recording", async ({ page }) => {
 - **`moveTo(page, element, prevBox?)`** — Distance-based delay + fake cursor update. Returns new bounding box.
 - **`waitUntil(page, sceneStart, targetMs, minMs?)`** — Wait until a target audio timestamp offset within a scene. Primary pacing mechanism for audio-informed specs.
 - **`injectCursor(page)`** — Injects `#demofly-cursor` div. Must re-call after `page.goto()`.
+- **`resolve(page, opts)`** — Fallback selector chain. Tries multiple selector factories in order, returns first that resolves to exactly one visible element. Throws `ResolveError` with page snapshot on total failure. Use for every interactive element in scene specs.
+- **`ResolveError`** — Custom error thrown by `resolve()`. Contains `description`, `selectorsTriedCount`, and truncated `snapshot` of the page's accessibility tree.
 - **`createTempDir(demoName)`** — OS-agnostic transient temp directory.
 - **`createSessionTmpDir(demoDir)`** — Session `.tmp/` subdirectory inside demo folder.
+
+### resolve() Usage
+
+```typescript
+import { resolve } from '../helpers';
+
+// Use for every interactive element — provides resilience against selector fragility
+const btn = await resolve(page, {
+  description: 'Share button in toolbar',
+  selectors: [
+    () => page.getByRole('button', { name: 'Share', exact: true }),
+    () => page.locator('button').filter({ hasText: /^Share$/ }).first(),
+    () => page.locator('[data-testid="share-btn"]'),
+  ],
+  timeout: 5000, // optional, default 5000ms
+});
+await btn.click();
+```
+
+**Selector strategy order (most specific → broadest):**
+1. `getByRole` with `exact: true`
+2. Text/filter match with `.first()` for disambiguation
+3. `data-testid` or structural locators
 
 ---
 
